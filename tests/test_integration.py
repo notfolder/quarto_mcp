@@ -193,6 +193,48 @@ def hello_quarto():
     return "Success"
 ```
 
+## システムアーキテクチャ図
+
+以下は、Quarto MCP Serverのアーキテクチャを示す図です：
+
+```{mermaid}
+flowchart TD
+    A[MCP Client] -->|Request| B[Quarto MCP Server]
+    B --> C{Format Type}
+    C -->|pptx| D[PowerPoint Generator]
+    C -->|html| E[HTML Generator]
+    C -->|pdf| F[PDF Generator]
+    D --> G[Quarto CLI]
+    E --> G
+    F --> G
+    G --> H[Output File]
+    
+    style A fill:#e1f5ff
+    style B fill:#fff4e1
+    style G fill:#e8f5e9
+    style H fill:#fce4ec
+```
+
+## プロセスフロー図
+
+変換処理の流れ：
+
+```{mermaid}
+sequenceDiagram
+    participant Client as MCP Client
+    participant Server as MCP Server
+    participant Quarto as Quarto CLI
+    participant Output as Output File
+    
+    Client->>Server: quarto_render(content, format)
+    Server->>Server: Validate input
+    Server->>Server: Create temp workspace
+    Server->>Quarto: Execute render command
+    Quarto->>Output: Generate file
+    Output-->>Server: File created
+    Server-->>Client: Return result
+```
+
 # まとめ
 
 ## 今後の展望

@@ -240,11 +240,18 @@ class QuartoRenderer:
         else:
             merged[format_id] = format_options
         
-        # テンプレート指定があれば追加
-        if template_path and format_id == "pptx":
+        # PowerPoint形式の場合、追加設定を適用
+        if format_id == "pptx":
             if not isinstance(merged[format_id], dict):
                 merged[format_id] = {}
-            merged[format_id]["reference-doc"] = template_path
+            
+            # テンプレート指定があれば追加
+            if template_path:
+                merged[format_id]["reference-doc"] = template_path
+            
+            # fig-formatをsvgに強制設定（ユーザー指定がない場合のみ）
+            if "fig-format" not in merged[format_id]:
+                merged[format_id]["fig-format"] = "svg"
         
         return merged
     

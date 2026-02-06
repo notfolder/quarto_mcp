@@ -1,0 +1,26 @@
+---
+title: "Sample Presentation"
+author: "Quarto MCP Server"
+format: pptx
+---
+
+# Introduction
+
+This is a sample Quarto Markdown document for testing.
+
+## Main Points
+
+- Point 1: Easy to use
+- Point 2: Flexible output formats
+- Point 3: Template support
+
+## Code Example
+
+```python
+def hello():
+    print("Hello, Quarto!")
+```
+
+## Conclusion
+
+Thank you for using Quarto MCP Server!

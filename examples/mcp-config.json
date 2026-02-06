@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "quarto": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "/path/to/quarto_mcp",
+        "quarto-mcp"
+      ],
+      "description": "Quarto document converter - converts Quarto Markdown to PowerPoint and other formats"
+    }
+  }
+}

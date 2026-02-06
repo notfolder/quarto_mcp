@@ -1,7 +1,7 @@
 """入出力スキーマの定義."""
 
 from typing import Optional, Dict, Any, List
-from datetime import datetime
+from datetime import datetime, timezone
 from pydantic import BaseModel, Field
 
 
@@ -38,7 +38,10 @@ class ErrorInfo(BaseModel):
     message: str = Field(description="エラーの概要メッセージ")
     details: str = Field(description="エラーの詳細説明")
     quarto_stderr: Optional[str] = Field(default=None, description="Quarto CLIの標準エラー出力内容")
-    timestamp: str = Field(default_factory=lambda: datetime.utcnow().isoformat(), description="エラー発生日時")
+    timestamp: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat(), 
+        description="エラー発生日時"
+    )
 
 
 class ErrorResponse(BaseModel):

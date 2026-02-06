@@ -115,17 +115,19 @@ class TemplateManager:
         if not template_spec:
             return None
         
-        # URLかどうか判定
+        # URLかどうか判定（http://またはhttps://で始まる、または://を含む）
         if self._is_url(template_spec):
-            # URLからダウンロード
+            # URLの場合、検証してからダウンロード
+            # 検証で不正なスキームの場合はInvalidTemplateUrlErrorが発生
+            self._validate_url(template_spec)
             return await self._download_template(template_spec, temp_dir)
         else:
             # テンプレートIDとして解決
             return self._resolve_template_id(template_spec)
     
     def _is_url(self, spec: str) -> bool:
-        """文字列がURLかどうか判定する."""
-        return spec.startswith('http://') or spec.startswith('https://')
+        """文字列がURLかどうか判定する（://が含まれる場合はURLとみなす）."""
+        return '://' in spec
     
     def _resolve_template_id(self, template_id: str) -> str:
         """
@@ -170,9 +172,10 @@ class TemplateManager:
             TemplateDownloadTimeoutError: ダウンロードタイムアウト
             TemplateSizeExceededError: ファイルサイズが制限超過
             TemplateDownloadError: ダウンロード失敗
+            
+        Note:
+            URL検証は呼び出し側で実施済み
         """
-        # URL検証
-        self._validate_url(url)
         
         # URLからファイル名を抽出
         parsed_url = urlparse(url)

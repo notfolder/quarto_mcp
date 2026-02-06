@@ -2,10 +2,14 @@
 基本的な機能テスト
 注意: Quarto CLIがインストールされている環境で実行してください
 """
+import sys
 import asyncio
 import os
 import tempfile
 from pathlib import Path
+
+# プロジェクトルートをパスに追加
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.core.renderer import QuartoRenderer
 

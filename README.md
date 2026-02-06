@@ -139,6 +139,42 @@ URLを直接指定することで、テンプレートを自動ダウンロー�
 
 その他、多数の形式に対応。詳細は`quarto_list_formats`ツールで確認できます。
 
+## テスト
+
+### テスト環境のセットアップ
+
+```bash
+# 仮想環境を作成
+uv venv
+source .venv/bin/activate
+
+# 依存関係をインストール
+uv pip install -e ".[dev]"
+```
+
+### テストの実行
+
+```bash
+# すべてのテストを実行
+pytest
+
+# 統合テストのみ実行（Quarto CLIが必要）
+pytest tests/test_integration.py -v
+
+# PowerPoint出力テスト（手動確認用）
+pytest tests/test_integration.py::test_render_pptx_for_manual_inspection -v -s
+```
+
+**手動確認用テストについて:**
+
+`test_render_pptx_for_manual_inspection`テストは、実際のPowerPointファイルを`test_output/demo_presentation.pptx`に生成します。テスト実行後、以下のコマンドでファイルを開いて内容を確認できます：
+
+```bash
+open test_output/demo_presentation.pptx  # macOS
+# または
+xdg-open test_output/demo_presentation.pptx  # Linux
+```
+
 ## ライセンス
 
 CC-BY-4.0

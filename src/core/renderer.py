@@ -3,6 +3,7 @@
 import asyncio
 import os
 import re
+import shutil
 import time
 from pathlib import Path
 from typing import Optional, Dict, Any
@@ -18,7 +19,12 @@ class QuartoRenderError(Exception):
     """Quarto変換処理のエラー."""
     
     def __init__(self, message: str, stderr: Optional[str] = None, code: str = "RENDER_FAILED"):
-        super().__init__(message)
+        # stderrがある場合はメッセージに含める
+        if stderr and stderr.strip():
+            full_message = f"{message}\n\nQuarto stderr:\n{stderr}"
+        else:
+            full_message = message
+        super().__init__(full_message)
         self.stderr = stderr
         self.code = code
 
@@ -91,26 +97,32 @@ class QuartoRenderer:
             qmd_path = temp_dir / "document.qmd"
             self._write_qmd(qmd_path, content, format_id, format_options, template_path)
             
-            # 出力パスのディレクトリを作成
-            output_file = Path(output_path)
-            output_file.parent.mkdir(parents=True, exist_ok=True)
+            # 最終的な出力パス
+            final_output_path = Path(output_path)
+            final_output_path.parent.mkdir(parents=True, exist_ok=True)
             
-            # Quarto CLIコマンドを構築
-            command = self._build_command(qmd_path, format_id, output_file)
+            # 一時ディレクトリ内での出力ファイル名（拡張子を取得）
+            temp_output = temp_dir / f"document{format_info.extension}"
             
-            # Quarto CLIを実行
-            stdout, stderr = await self._execute_quarto(command)
+            # Quarto CLIコマンドを構築（一時ディレクトリ内に出力）
+            command = self._build_command(qmd_path, format_id, temp_output)
             
-            # 出力ファイルの存在を確認
-            if not output_file.exists():
+            # Quarto CLIを実行（カレントディレクトリを一時ディレクトリに設定）
+            stdout, stderr = await self._execute_quarto(command, cwd=temp_dir)
+            
+            # 一時ディレクトリ内の出力ファイルの存在を確認
+            if not temp_output.exists():
                 raise QuartoRenderError(
-                    f"Output file was not generated: {output_file}",
+                    f"Output file was not generated: {temp_output}",
                     stderr=stderr,
                     code="OUTPUT_NOT_FOUND"
                 )
             
+            # 一時ファイルを最終出力パスにコピー
+            shutil.copy2(temp_output, final_output_path)
+            
             # 出力ファイル情報を取得
-            file_info = self._get_file_info(output_file, format_info.mime_type)
+            file_info = self._get_file_info(final_output_path, format_info.mime_type)
             
             # Quartoバージョンを取得
             quarto_version = await self._get_quarto_version()
@@ -248,26 +260,31 @@ class QuartoRenderer:
         Args:
             qmd_path: 入力.qmdファイルのパス
             format_id: 出力形式ID
-            output_path: 出力ファイルのパス
+            output_path: 出力ファイルのパス（一時ディレクトリ内）
             
         Returns:
             コマンドライン引数のリスト
         """
+        # パスからファイル名のみを取得（カレントディレクトリが一時ディレクトリなので）
+        qmd_filename = Path(qmd_path).name
+        output_filename = Path(output_path).name
+        
         return [
             self.quarto_path,
             "render",
-            str(qmd_path),
+            qmd_filename,
             "--to", format_id,
-            "--output", str(output_path),
+            "--output", output_filename,
             "--no-execute",
         ]
     
-    async def _execute_quarto(self, command: list[str]) -> tuple[str, str]:
+    async def _execute_quarto(self, command: list[str], cwd: Optional[Path] = None) -> tuple[str, str]:
         """
         Quarto CLIを非同期で実行する.
         
         Args:
             command: コマンドライン引数のリスト
+            cwd: 実行時のカレントディレクトリ（オプション）
             
         Returns:
             (stdout, stderr) のタプル
@@ -280,6 +297,7 @@ class QuartoRenderer:
                 *command,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
+                cwd=str(cwd) if cwd else None,
             )
             
             # タイムアウト付きで完了を待機

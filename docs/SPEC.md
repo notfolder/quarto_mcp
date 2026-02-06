@@ -13,7 +13,8 @@ Quarto Markdown（.qmd形式）を文字列として受け取り、PowerPoint（
 - **PowerPoint形式を主軸**: 企業プレゼンテーション作成を最優先ユースケースとして設計
 - **カスタムテンプレート対応**: PowerPointの企業テンプレート（.pptx）を指定可能
   - 設定ファイルで複数テンプレートを事前登録
-  - ツール引数でテンプレートIDまたはパスを指定
+  - ツール引数でテンプレートIDまたはURLを指定
+  - URL指定時は自動ダウンロードして使用
 - **文字列ベースの入力**: LLM/MCPクライアントから純粋な文字列として Quarto Markdown を受理
 - **多形式出力対応**: PowerPoint以外にもQuarto CLIがサポートする全形式に対応
 - **ファイルパス出力**: 指定されたパスに直接出力ファイルを生成
@@ -202,13 +203,16 @@ flowchart TD
 - 指定方法（以下のいずれか）:
   - **テンプレートID**: 設定ファイル（templates.yaml）で事前登録したテンプレート名を指定
     - 例: `"corporate_standard"`, `"sales_pitch"`, `"technical_report"`
-  - **絶対パス**: テンプレートファイル（.pptx）の絶対パスを直接指定
-    - 例: `"/path/to/custom_template.pptx"`
+  - **URL（HTTP/HTTPS）**: テンプレートファイル（.pptx）のURLを直接指定
+    - 例: `"https://example.com/templates/custom.pptx"`
+    - サーバーが自動的にダウンロードしてキャッシュ
+    - HTTPSの使用を強く推奨（セキュリティ確保のため）
 - 適用条件: `format`が`pptx`の場合のみ有効
 - デフォルト: なし（Quartoのデフォルトテンプレート使用）
 - 注意事項:
   - テンプレートIDを指定した場合、サーバー側の設定ファイルで定義されたパスに解決される
-  - テンプレートファイルは事前に存在し、読み取り可能である必要がある
+  - URLを指定した場合、一時ディレクトリにダウンロードされ、処理後に削除される
+  - URL指定時はダウンロードタイムアウト（30秒）とファイルサイズ制限（50MB）あり
 
 **format_options（任意）**
 - データ型: オブジェクト
@@ -311,6 +315,7 @@ dependenciesセクションに必須パッケージを列挙:
 - `mcp>=0.9.0`: MCP SDK
 - `pydantic>=2.0.0`: データスキーマ
 - `pyyaml`: YAML設定読み込み
+- `httpx`: 非同期HTTPクライアント（テンプレートURLダウンロード用）
 
 **CLIエントリーポイント**
 
@@ -355,7 +360,11 @@ tool.hatchセクション（使用する場合）:
 1. TempFileManagerを使用して一時ディレクトリを作成
 2. PowerPoint形式の場合、TemplateManagerでテンプレートパスを解決:
    - `template`がテンプレートIDの場合、設定ファイルからパスを取得
-   - `template`が絶対パスの場合、そのまま使用
+   - `template`がURL（http://またはhttps://で始まる）の場合、以下を実行:
+     1. URL形式の検証（スキーム、ドメイン、拡張子チェック）
+     2. HTTPクライアント（httpx）で非同期ダウンロード
+     3. 一時ディレクトリ内に保存（ファイル名は元のファイル名を保持）
+     4. ダウンロードしたファイルのパスを返却
    - `template`が未指定の場合、テンプレート指定なし
 3. 一時ディレクトリ内に`document.qmd`ファイルを作成
 4. `content`とYAMLヘッダー（format_options + テンプレート指定から生成）を結合して.qmdファイルに書き込み
@@ -411,12 +420,16 @@ tool.hatchセクション（使用する場合）:
 **属性**
 - `config_path`: テンプレート設定ファイル（templates.yaml）のパス
 - `templates`: 登録済みテンプレート情報の辞書（ID → パス）
+- `http_client`: HTTPクライアント（httpx.AsyncClient）インスタンス
+- `download_timeout`: URLダウンロードのタイムアウト秒数（デフォルト: 30秒）
+- `max_download_size`: ダウンロード可能な最大ファイルサイズ（デフォルト: 50MB）
 
 **メソッド: resolve_template**
 
 入力:
-- `template_spec`: テンプレート指定（IDまたはパス）
+- `template_spec`: テンプレート指定（IDまたはURL）
 - `format`: 出力形式（pptx等）
+- `temp_dir`: 一時ディレクトリパス（URL時のダウンロード先）
 
 処理:
 1. `format`が`pptx`以外の場合、Noneを返却（テンプレート不要）
@@ -424,9 +437,14 @@ tool.hatchセクション（使用する場合）:
 3. `template_spec`がテンプレートID（設定ファイルに存在）の場合:
    - 設定ファイルから対応するパスを取得
    - パスの存在を確認
-4. `template_spec`が絶対パスの場合:
-   - ファイルの存在を確認
-   - .pptx拡張子を確認
+4. `template_spec`がURL（http://またはhttps://で始まる）の場合:
+   - URLスキームの検証（HTTP/HTTPSのみ許可）
+   - URLパスの拡張子を確認（.pptxのみ許可）
+   - httpx.AsyncClientで非同期GET リクエスト実行
+   - Content-Lengthヘッダーでサイズチェック（max_download_size以内）
+   - ストリーミングダウンロードでファイルサイズを監視
+   - temp_dir内にファイル保存（ファイル名はURLから抽出）
+   - ダウンロード完了後のファイルパスを返却
 5. 解決されたテンプレートパスを返却
 
 出力:
@@ -434,8 +452,11 @@ tool.hatchセクション（使用する場合）:
 
 例外:
 - `TemplateNotFoundError`: 指定されたテンプレートIDが存在しない
-- `TemplateAccessError`: テンプレートファイルへのアクセス権限がない
-- `InvalidTemplateError`: テンプレートファイルが不正（拡張子違い等）
+- `TemplateDownloadError`: URLからのダウンロード失敗
+- `TemplateDownloadTimeoutError`: ダウンロードタイムアウト
+- `TemplateSizeExceededError`: ファイルサイズが制限超過
+- `InvalidTemplateUrlError`: 不正なURL（スキーム、ドメイン、拡張子等）
+- `InvalidTemplateError`: テンプレートファイルが不正
 
 **設定ファイル形式（templates.yaml）**
 
@@ -554,6 +575,12 @@ templates:
 4. **PyYAML**
    - テンプレート設定ファイル（templates.yaml）の読み込み
    - YAMLフロントマターの解析・生成
+
+5. **httpx**
+   - 非同期HTTPクライアント機能
+   - テンプレートURLからのダウンロード処理
+   - タイムアウト制御とストリーミングダウンロード対応
+   - HTTP/2サポートによる高速ダウンロード
 
 ---
 

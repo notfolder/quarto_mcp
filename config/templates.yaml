@@ -1,0 +1,15 @@
+# PowerPointテンプレート設定
+# テンプレートIDとファイルパスのマッピング
+
+templates:
+  corporate_standard:
+    path: /app/templates/corporate_standard.pptx
+    description: "企業標準テンプレート"
+  
+  sales_pitch:
+    path: /app/templates/sales_pitch.pptx
+    description: "営業プレゼン用テンプレート"
+  
+  technical_report:
+    path: /app/templates/technical_report.pptx
+    description: "技術報告書テンプレート"

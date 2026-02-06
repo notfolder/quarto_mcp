@@ -1,0 +1,28 @@
+# PowerPointテンプレート設定ファイル
+# 
+# このファイルでは、事前登録するPowerPointテンプレートを定義します。
+# quarto_renderツールで template パラメータにテンプレートIDを指定することで、
+# ここで定義されたテンプレートファイルを使用できます。
+
+templates:
+  # 企業標準テンプレート
+  # corporate_standard:
+  #   path: /app/templates/corporate_standard.pptx
+  #   description: "企業標準テンプレート"
+  
+  # 営業プレゼン用テンプレート
+  # sales_pitch:
+  #   path: /app/templates/sales_pitch.pptx
+  #   description: "営業プレゼン用テンプレート"
+  
+  # 技術報告書テンプレート
+  # technical_report:
+  #   path: /app/templates/technical_report.pptx
+  #   description: "技術報告書テンプレート"
+
+# 使用例:
+# 1. テンプレートIDを使用する場合:
+#    template: "corporate_standard"
+#
+# 2. HTTP/HTTPS URLを使用する場合（設定ファイル不要）:
+#    template: "https://example.com/templates/custom.pptx"

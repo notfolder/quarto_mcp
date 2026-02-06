@@ -4,6 +4,7 @@ import asyncio
 from pathlib import Path
 from typing import Optional
 
+import yaml
 from mcp.server import Server
 from mcp.types import Tool, TextContent
 import mcp.server.stdio
@@ -23,6 +24,35 @@ async def list_tools() -> list[Tool]:
     Returns:
         ツール定義のリスト
     """
+    # テンプレート設定ファイルからテンプレートIDを読み込む
+    config_path = Path(__file__).parent.parent / "config" / "templates.yaml"
+    template_ids = []
+    template_descriptions = {}
+    
+    if config_path.exists():
+        try:
+            with open(config_path, "r", encoding="utf-8") as f:
+                config = yaml.safe_load(f)
+                if config and "templates" in config and config["templates"]:
+                    for template_id, template_info in config["templates"].items():
+                        template_ids.append(template_id)
+                        if isinstance(template_info, dict) and "description" in template_info:
+                            template_descriptions[template_id] = template_info["description"]
+        except Exception:
+            # YAMLパースエラーは無視してデフォルトの説明を使用
+            pass
+    
+    # テンプレートIDのリストを説明文に追加
+    template_info_text = ""
+    if template_ids:
+        template_info_text = "\n\nAvailable template IDs:"
+        for tid in template_ids:
+            desc = template_descriptions.get(tid, "")
+            if desc:
+                template_info_text += f"\n  - {tid}: {desc}"
+            else:
+                template_info_text += f"\n  - {tid}"
+    
     return [
         Tool(
             name="quarto_render",
@@ -58,7 +88,7 @@ async def list_tools() -> list[Tool]:
                             "Template specification for PowerPoint format. "
                             "Can be either a template ID (registered in templates.yaml) "
                             "or an HTTP/HTTPS URL to a .pptx file. "
-                            "URL will be automatically downloaded."
+                            f"URL will be automatically downloaded.{template_info_text}"
                         ),
                     },
                     "format_options": {

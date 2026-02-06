@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "CC-BY-4.0" }
 authors = [
-    { name = "Quarto MCP Server Team", email = "info@example.com" }
+    { name = "Quarto MCP Server Team", email = "notfolder@gmail.com" }
 ]
 keywords = ["mcp", "quarto", "markdown", "powerpoint", "presentation", "conversion"]
 classifiers = [

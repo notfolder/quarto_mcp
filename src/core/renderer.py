@@ -249,7 +249,7 @@ class QuartoRenderer:
             try:
                 process.kill()
                 await process.wait()
-            except:
+            except (ProcessLookupError, asyncio.CancelledError):
                 pass
             raise QuartoRenderError(f"Quarto render timed out after {timeout} seconds")
         except Exception as e:
@@ -273,7 +273,7 @@ class QuartoRenderer:
             stdout_bytes, _ = await asyncio.wait_for(process.communicate(), timeout=5)
             version = stdout_bytes.decode('utf-8').strip()
             return version
-        except:
+        except (asyncio.TimeoutError, OSError, FileNotFoundError) as e:
             return "unknown"
     
     def _get_file_info(self, output_file: Path, format: str) -> OutputInfo:

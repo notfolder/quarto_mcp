@@ -111,13 +111,32 @@ templates:
 ```bash
 # 依存関係をインストール
 uv pip install -e .
+# または
+pip install -r requirements.txt
 
 # Quarto CLIの確認
 quarto check
 
+# テストの実行
+python tests/test_components.py
+
 # サーバー起動
 python -m src.server
+# または
+quarto-mcp
 ```
+
+### テストについて
+
+- `tests/test_components.py`: コンポーネント単体テスト（Quarto不要）
+- `tests/test_basic.py`: 基本的な変換テスト（Quarto CLI必要）
+
+コンポーネントテストは以下を検証します：
+- TempFileManager: 一時ファイル管理
+- TemplateManager: テンプレート解決
+- Format definitions: 形式定義とMIMEタイプ
+- Pydantic schemas: リクエスト/レスポンスモデル
+- Server initialization: MCPサーバー初期化
 
 ## ライセンス
 

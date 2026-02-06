@@ -149,12 +149,12 @@ def test_schemas():
         output=output,
         metadata=metadata
     )
-    assert success.success == True
+    assert success.success
     assert success.format == "pptx"
     
     # シリアライズのテスト
     success_dict = success.model_dump()
-    assert success_dict["success"] == True
+    assert success_dict["success"] is True
     assert success_dict["format"] == "pptx"
     
     # ErrorDetailのテスト
@@ -167,10 +167,10 @@ def test_schemas():
     
     # RenderErrorのテスト
     error_response = RenderError(error=error)
-    assert error_response.success == False
+    assert not error_response.success
     
     error_dict = error_response.model_dump()
-    assert error_dict["success"] == False
+    assert error_dict["success"] is False
     assert error_dict["error"]["code"] == "RENDER_FAILED"
     
     print("✓ Schema tests passed")

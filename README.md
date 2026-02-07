@@ -9,6 +9,10 @@ Quarto Markdown（.qmd形式）を文字列として受け取り、PowerPoint（
   - 設定ファイルで複数テンプレートを事前登録
   - ツール引数でテンプレートIDまたはURLを指定
   - **URL指定時は自動ダウンロードして使用**（HTTP/HTTPS対応）
+- **Mermaidバリデーション**: レンダリング前にMermaid構文を検証
+  - 多層バリデーション方式（正規表現 + Mermaid CLI）
+  - 不正な記法の検出（スペルミス、コードブロック外のキーワード等）
+  - 詳細なエラーレポート
 - **文字列ベースの入力**: LLM/MCPクライアントから純粋な文字列として Quarto Markdown を受理
 - **多形式出力対応**: PowerPoint以外にもQuarto CLIがサポートする全形式に対応
 - **ファイルパス出力**: 指定されたパスに直接出力ファイルを生成
@@ -18,6 +22,11 @@ Quarto Markdown（.qmd形式）を文字列として受け取り、PowerPoint（
 
 - Python 3.10以上
 - Quarto CLI 1.3以上
+
+### Mermaidバリデーション機能を使用する場合（推奨）
+
+- Node.js 14以上
+- Mermaid CLI: `npm install -g @mermaid-js/mermaid-cli`
 
 ## インストール
 
@@ -94,6 +103,32 @@ Quarto Markdownを指定形式に変換します。
 ### quarto_list_formats
 
 サポートされている出力形式の一覧を取得します。
+
+### quarto_validate_mermaid
+
+Quarto Markdown内のMermaidダイアグラムの構文を検証します。レンダリング前の事前検証に使用することを推奨します。
+
+**パラメータ:**
+- `content` (必須): Quarto Markdown形式の文字列
+- `strict_mode` (任意): 厳密モード（警告もエラーとして扱う）、デフォルト: false
+
+**使用例:**
+
+```python
+{
+  "content": "# スライド\n\n```{mermaid}\ngraph TD\n    A --> B\n```",
+  "strict_mode": false
+}
+```
+
+**必須要件:**
+- Mermaid CLI (mmdc) が必須です
+- インストール方法: `npm install -g @mermaid-js/mermaid-cli`
+- Node.js 14以上が必要
+
+**推奨ワークフロー:**
+1. `quarto_validate_mermaid`でMermaid構文を検証
+2. 検証が成功したら`quarto_render`でレンダリング実行
 
 ## テンプレート機能
 

@@ -9,7 +9,7 @@ from mcp.server import Server
 from mcp.types import Tool, TextContent
 import mcp.server.stdio
 
-from src.tools import render, formats
+from src.tools import render, formats, validate_mermaid
 
 
 # サーバーインスタンス
@@ -108,6 +108,28 @@ async def list_tools() -> list[Tool]:
                 "properties": {},
             },
         ),
+        Tool(
+            name="quarto_validate_mermaid",
+            description=(
+                "Validate Mermaid diagram syntax in Quarto Markdown content. "
+                "This is an independent pre-validation tool that should be called before quarto_render. "
+                "Requires Mermaid CLI (mmdc) to be installed: npm install -g @mermaid-js/mermaid-cli"
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "content": {
+                        "type": "string",
+                        "description": "Quarto Markdown content to validate",
+                    },
+                    "strict_mode": {
+                        "type": "boolean",
+                        "description": "Strict mode: treat warnings as errors (default: false)",
+                    },
+                },
+                "required": ["content"],
+            },
+        ),
     ]
 
 
@@ -165,6 +187,31 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
         # 結果をJSON文字列として返す
         import json
         return [TextContent(type="text", text=json.dumps(format_list, indent=2, ensure_ascii=False))]
+    
+    elif name == "quarto_validate_mermaid":
+        # 必須パラメータの検証
+        content = arguments.get("content")
+        
+        if not content:
+            return [
+                TextContent(
+                    type="text",
+                    text="Error: Missing required parameter (content)",
+                )
+            ]
+        
+        # オプショナルパラメータ
+        strict_mode = arguments.get("strict_mode", False)
+        
+        # バリデーション実行
+        result = await validate_mermaid.validate_mermaid(
+            content=content,
+            strict_mode=strict_mode,
+        )
+        
+        # 結果をJSON文字列として返す
+        import json
+        return [TextContent(type="text", text=json.dumps(result, indent=2, ensure_ascii=False))]
         
     else:
         return [TextContent(type="text", text=f"Error: Unknown tool '{name}'")]

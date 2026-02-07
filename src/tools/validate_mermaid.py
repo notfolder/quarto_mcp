@@ -27,25 +27,6 @@ async def validate_mermaid(
         # バリデータを初期化
         validator = MermaidValidator()
         
-        # Mermaid CLIの利用可能性チェック（必須要件）
-        if not validator.is_cli_available():
-            error_response = ErrorResponse(
-                success=False,
-                error=ErrorInfo(
-                    code="MERMAID_CLI_NOT_FOUND",
-                    message="Mermaid CLI is not installed",
-                    details=(
-                        "Mermaid CLI (mmdc) is required for validation. "
-                        "Please install it with:\n"
-                        "npm install -g @mermaid-js/mermaid-cli\n\n"
-                        "Requirements:\n"
-                        "- Node.js 14 or higher\n"
-                        "- npm or npx"
-                    ),
-                )
-            )
-            return error_response.model_dump()
-        
         # バリデーション実行
         result = await validator.validate(
             content=content,

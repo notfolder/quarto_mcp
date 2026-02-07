@@ -1,6 +1,7 @@
 """Mermaid CLI連携モジュール."""
 
 import asyncio
+import os
 import re
 import shutil
 from typing import Optional, Dict, Any
@@ -31,7 +32,7 @@ class MermaidCliValidator:
     
     def _get_version(self) -> Optional[str]:
         """
-        Mermaid CLIのバージョン情報を取得する.
+        Mermaid CLIのバージョン情報を取得する（同期版）.
         
         Returns:
             バージョン文字列、取得失敗時はNone
@@ -40,25 +41,17 @@ class MermaidCliValidator:
             return None
         
         try:
-            # タイムアウト5秒で実行
-            process = asyncio.create_subprocess_exec(
-                self._cli_path,
-                '--version',
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+            # 同期的にバージョン取得を試行
+            import subprocess
+            result = subprocess.run(
+                [self._cli_path, '--version'],
+                capture_output=True,
+                text=True,
+                timeout=5
             )
             
-            # 非同期処理を同期的に実行
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            proc = loop.run_until_complete(process)
-            stdout, stderr = loop.run_until_complete(
-                asyncio.wait_for(proc.communicate(), timeout=5.0)
-            )
-            loop.close()
-            
-            if proc.returncode == 0:
-                version_str = stdout.decode('utf-8').strip()
+            if result.returncode == 0:
+                version_str = result.stdout.strip()
                 return version_str
         except Exception:
             pass
@@ -108,12 +101,11 @@ class MermaidCliValidator:
         try:
             # mmdcコマンドを標準入出力方式で実行
             # -i -: 標準入力から読み込み
-            # -o /dev/null: 出力を破棄
-            # --parseOnly: 構文解析のみ実行
+            # -o <devnull>: 出力を破棄（クロスプラットフォーム対応）
             process = await asyncio.create_subprocess_exec(
                 self._cli_path,
                 '-i', '-',
-                '-o', '/dev/null',
+                '-o', os.devnull,
                 stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE

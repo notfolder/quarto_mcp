@@ -137,10 +137,11 @@ flowchart LR
 """
         issues = self.extractor.detect_malformed_blocks(content)
         
-        # インラインコード内のキーワードは検出されないこと
-        # （実装によっては検出される可能性もあるが、理想的には除外）
-        # この場合は検出されても警告レベルなので許容
-        assert True  # 最低限のテスト通過
+        # インラインコード内のキーワードは除外されるため、
+        # unblockedタイプの問題は検出されないはず
+        unblocked_issues = [i for i in issues if i['issue_type'] == 'unblocked']
+        # インラインコード内のキーワードは除外処理により検出されない
+        assert len(unblocked_issues) == 0
 
 
 class TestRegexValidator:

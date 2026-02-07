@@ -34,7 +34,11 @@ class MermaidExtractor:
     
     def __init__(self):
         """初期化."""
-        pass
+        # キーワード検出用の正規表現パターンを事前コンパイル
+        self._keyword_patterns = []
+        for keyword in self.DIAGRAM_KEYWORDS:
+            pattern = re.compile(rf'(^|\s){re.escape(keyword)}(\s|$)')
+            self._keyword_patterns.append((keyword, pattern))
     
     def extract_mermaid_blocks(self, content: str) -> List[Dict[str, Any]]:
         """
@@ -54,8 +58,8 @@ class MermaidExtractor:
         blocks = []
         lines = content.split('\n')
         
-        # Quarto拡張記法と標準Markdown記法の両方に対応
-        pattern = r'^```\{mermaid\}|^```mermaid'
+        # Quarto拡張記法と標準Markdown記法の両方に対応（先頭の空白も許容）
+        pattern = r'^\s*```\{mermaid\}|^\s*```mermaid'
         
         i = 0
         block_index = 0
@@ -63,7 +67,7 @@ class MermaidExtractor:
             line = lines[i]
             
             # コードブロック開始を検出
-            if re.match(pattern, line.strip()):
+            if re.match(pattern, line):
                 start_line = i + 1  # 1始まり
                 code_lines = []
                 i += 1
@@ -216,9 +220,9 @@ class MermaidExtractor:
                 cleaned_line = re.sub(r'`[^`]+`', '', line)
                 
                 # Mermaidダイアグラムキーワードをチェック
-                for keyword in self.DIAGRAM_KEYWORDS:
-                    # 行頭または空白後にキーワードが存在するかチェック
-                    if re.search(rf'(^|\s){keyword}(\s|$)', cleaned_line):
+                for keyword, pattern in self._keyword_patterns:
+                    # 事前コンパイル済みのパターンを使用
+                    if pattern.search(cleaned_line):
                         issues.append({
                             'line': line_num,
                             'issue_type': 'unblocked',

@@ -13,6 +13,8 @@ from src.core.file_manager import TempFileManager
 from src.core.template_manager import TemplateManager
 from src.models.schemas import RenderResult, OutputInfo, Metadata
 from src.models.formats import FORMAT_DEFINITIONS
+from src.converters.kroki_converter import KrokiConverter
+from src.managers.yaml_frontmatter_manager import YAMLFrontmatterManager
 
 
 class QuartoRenderError(Exception):
@@ -93,6 +95,16 @@ class QuartoRenderer:
         
         format_info = FORMAT_DEFINITIONS[format_id]
         start_time = time.time()
+        
+        # Kroki統合機能の適用
+        if self._is_kroki_enabled():
+            try:
+                content = self._apply_kroki_conversion(content, format_id, format_options)
+            except Exception as e:
+                # Kroki変換でエラーが発生した場合はフォールバック
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Kroki conversion failed, falling back to standard flow: {e}")
         
         # 一時作業ディレクトリを作成
         with self.temp_manager.create_workspace() as temp_dir:
@@ -409,3 +421,68 @@ class QuartoRenderer:
                 warnings.append(line.strip())
         
         return warnings
+    
+    def _is_kroki_enabled(self) -> bool:
+        """
+        Kroki統合が有効かどうかを判定する.
+        
+        環境変数 QUARTO_MCP_KROKI_URL が設定されていて、
+        有効なURL形式（http または https で始まる）であれば有効と判定する.
+        
+        Returns:
+            Kroki統合が有効な場合True、それ以外False
+        """
+        kroki_url = os.environ.get("QUARTO_MCP_KROKI_URL", "").strip()
+        
+        if not kroki_url:
+            return False
+        
+        # URL形式の検証（http または https で始まるか）
+        if not (kroki_url.startswith("http://") or kroki_url.startswith("https://")):
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Invalid Kroki URL format: {kroki_url}")
+            return False
+        
+        return True
+    
+    def _apply_kroki_conversion(
+        self,
+        content: str,
+        format_id: str,
+        format_options: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """
+        Kroki統合変換を適用する.
+        
+        処理内容:
+        1. KrokiConverterでMermaid記法をKroki記法に変換
+        2. YAMLFrontmatterManagerでKroki設定をYAMLヘッダーに追加
+        
+        Args:
+            content: 元のQuarto Markdownコンテンツ
+            format_id: 出力形式ID
+            format_options: 形式固有オプション（未使用だが将来の拡張用）
+            
+        Returns:
+            Kroki統合が適用されたコンテンツ
+            
+        Raises:
+            Exception: 変換処理でエラーが発生した場合
+        """
+        # 環境変数からKroki URLを取得
+        kroki_url = os.environ.get("QUARTO_MCP_KROKI_URL", "").strip()
+        
+        # 環境変数から画像形式を取得（オプション）
+        image_format_env = os.environ.get("QUARTO_MCP_KROKI_IMAGE_FORMAT", "").lower()
+        image_format = image_format_env if image_format_env in ("svg", "png") else None
+        
+        # 1. Mermaid記法をKroki記法に変換
+        converter = KrokiConverter(format_id=format_id, image_format=image_format)
+        content = converter.convert(content)
+        
+        # 2. YAMLフロントマターにKroki設定を追加
+        yaml_manager = YAMLFrontmatterManager(kroki_service_url=kroki_url)
+        content = yaml_manager.add_kroki_config(content)
+        
+        return content

@@ -91,6 +91,63 @@ quarto add resepemb/quarto-kroki
 2. アーカイブを解凍
 3. `_extensions/kroki`ディレクトリに配置
 
+#### Krokiサービスの起動
+
+Krokiサービスをセルフホスティングする場合、Docker Composeを使用して簡単に起動できる。
+
+**docker-compose.ymlの例:**
+
+```yaml
+services:
+  kroki:
+    image: yuzutech/kroki:latest
+    container_name: kroki
+    ports:
+      - "8000:8000"
+    environment:
+      - KROKI_MERMAID_HOST=mermaid
+    depends_on:
+      - mermaid
+      - blockdiag
+      - excalidraw
+    restart: unless-stopped
+
+  mermaid:
+    image: yuzutech/kroki-mermaid:latest
+    container_name: kroki-mermaid
+    expose:
+      - "8002"
+    restart: unless-stopped
+```
+
+**起動方法:**
+
+```bash
+# Krokiサービスを起動
+docker-compose up -d
+
+# サービスの状態を確認
+docker-compose ps
+
+# ログを確認
+docker-compose logs -f kroki
+```
+
+**環境変数の設定:**
+
+Krokiサービス起動後、環境変数を設定してKroki機能を有効化：
+
+```bash
+# ローカルのKrokiサービスを使用
+export QUARTO_MCP_KROKI_URL=http://kroki:8000
+
+# タイムアウトを調整（オプション）
+export QUARTO_MCP_KROKI_TIMEOUT=3600
+
+# 画像形式を指定（オプション）
+export QUARTO_MCP_KROKI_IMAGE_FORMAT=auto
+```
+
 **拡張の適用:**
 - Kroki機能が有効な場合、YAMLフロントマターに拡張を自動的に追加
 - 拡張がインストールされていない場合はエラーを返す

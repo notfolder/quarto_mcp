@@ -66,9 +66,35 @@ class ExtensionManager:
         
         # 検証
         if not self._validate_extension(target_dir):
+            # デバッグ情報を収集
+            debug_info = []
+            debug_info.append(f"拡張ソースパス: {self.extensions_source}")
+            debug_info.append(f"拡張ソース存在: {self.extensions_source.exists()}")
+            debug_info.append(f"配置先ディレクトリ: {target_dir}")
+            debug_info.append(f"配置先存在: {target_dir.exists()}")
+            
+            target_ext = target_dir / "_extensions"
+            debug_info.append(f"\n配置先_extensions: {target_ext}")
+            debug_info.append(f"配置先_extensions存在: {target_ext.exists()}")
+            
+            if target_ext.exists():
+                try:
+                    contents = list(target_ext.rglob('*'))
+                    debug_info.append(f"配置先_extensionsの内容 ({len(contents)}件):")
+                    for item in sorted(contents)[:20]:  # 最初の20件のみ
+                        debug_info.append(f"  - {item.relative_to(target_ext)}")
+                    if len(contents) > 20:
+                        debug_info.append(f"  ... (他{len(contents)-20}件)")
+                except Exception as e:
+                    debug_info.append(f"内容取得エラー: {e}")
+            
+            expected_yml = target_dir / '_extensions' / 'resepemb' / 'kroki' / '_extension.yml'
+            debug_info.append(f"\n期待されるパス: {expected_yml}")
+            debug_info.append(f"期待されるパス存在: {expected_yml.exists()}")
+            
             raise FileNotFoundError(
-                f"EXTENSION_INVALID: 配置後の拡張が無効です。"
-                f"{target_dir / '_extensions' / 'resepemb' / 'kroki' / '_extension.yml'} が見つかりません。"
+                "EXTENSION_INVALID: 配置後の拡張が無効です。\n"
+                "デバッグ情報:\n" + "\n".join(debug_info)
             )
     
     def _check_extension_exists(self) -> bool:
@@ -121,9 +147,31 @@ class ExtensionManager:
             # インストール後、_extension.ymlの存在を確認
             extension_yml = self.extensions_source / "resepemb" / "kroki" / "_extension.yml"
             if not extension_yml.exists():
+                # デバッグ情報を収集
+                debug_info = []
+                debug_info.append(f"期待されるパス: {extension_yml}")
+                debug_info.append(f"親ディレクトリ: {self.parent_dir}")
+                debug_info.append(f"拡張ソースパス: {self.extensions_source}")
+                debug_info.append(f"拡張ソース存在: {self.extensions_source.exists()}")
+                
+                if self.extensions_source.exists():
+                    try:
+                        contents = list(self.extensions_source.rglob('*'))
+                        debug_info.append(f"拡張ソースの内容 ({len(contents)}件):")
+                        for item in sorted(contents)[:20]:
+                            debug_info.append(f"  - {item.relative_to(self.extensions_source)}")
+                        if len(contents) > 20:
+                            debug_info.append(f"  ... (他{len(contents)-20}件)")
+                    except Exception as e:
+                        debug_info.append(f"内容取得エラー: {e}")
+                
+                debug_info.append(f"\nquarto add 標準出力:\n{result.stdout}")
+                debug_info.append(f"\nquarto add 標準エラー:\n{result.stderr}")
+                
                 raise RuntimeError(
-                    f"EXTENSION_INSTALL_FAILED: quarto addコマンドは成功しましたが、"
-                    f"_extension.ymlが見つかりません: {extension_yml}"
+                    "EXTENSION_INSTALL_FAILED: quarto addコマンドは成功しましたが、"
+                    "_extension.ymlが見つかりません\n"
+                    "デバッグ情報:\n" + "\n".join(debug_info)
                 )
                 
         except subprocess.TimeoutExpired:
@@ -163,8 +211,28 @@ class ExtensionManager:
             )
             
         except Exception as e:
+            # デバッグ情報を収集
+            debug_info = []
+            debug_info.append(f"コピー元: {self.extensions_source}")
+            debug_info.append(f"コピー元存在: {self.extensions_source.exists()}")
+            debug_info.append(f"コピー先: {target_dir / '_extensions'}")
+            debug_info.append(f"コピー先親ディレクトリ存在: {target_dir.exists()}")
+            
+            if self.extensions_source.exists():
+                try:
+                    contents = list(self.extensions_source.rglob('*'))
+                    debug_info.append(f"コピー元の内容 ({len(contents)}件):")
+                    for item in sorted(contents)[:10]:
+                        debug_info.append(f"  - {item.relative_to(self.extensions_source)}")
+                    if len(contents) > 10:
+                        debug_info.append(f"  ... (他{len(contents)-10}件)")
+                except Exception as list_err:
+                    debug_info.append(f"コピー元内容取得エラー: {list_err}")
+            
             raise RuntimeError(
-                f"EXTENSION_COPY_FAILED: 拡張のコピーに失敗しました: {e}"
+                f"EXTENSION_COPY_FAILED: 拡張のコピーに失敗しました\n"
+                f"エラー: {e}\n"
+                f"デバッグ情報:\n" + "\n".join(debug_info)
             )
     
     def _validate_extension(self, target_dir: Path) -> bool:

@@ -48,7 +48,7 @@ class TemplateManager:
     def __init__(
         self, 
         config_path: Optional[Path] = None,
-        download_timeout: int = 30,
+        download_timeout: int = 600,  # デフォルト10分（600秒）
         max_download_size: int = 50 * 1024 * 1024,  # 50MB
     ):
         """

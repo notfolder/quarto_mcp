@@ -35,7 +35,7 @@ class QuartoRenderer:
     def __init__(
         self,
         quarto_path: str = "quarto",
-        timeout: int = 60,
+        timeout: int = 600,  # デフォルト10分（600秒）
         config_path: Optional[Path] = None,
     ):
         """

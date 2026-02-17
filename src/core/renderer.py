@@ -44,6 +44,14 @@ class QuartoRenderer:
             timeout: 変換処理のタイムアウト秒数
             config_path: テンプレート設定ファイルのパス
         """
+        import os
+        # 環境変数QUARTO_TIMEOUTがあれば優先
+        env_timeout = os.environ.get("QUARTO_TIMEOUT")
+        if env_timeout is not None:
+            try:
+                timeout = int(env_timeout)
+            except ValueError:
+                pass  # 不正な値は無視してデフォルト/引数を使う
         self.quarto_path = quarto_path
         self.timeout = timeout
         self.temp_manager = TempFileManager()

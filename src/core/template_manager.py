@@ -57,6 +57,14 @@ class TemplateManager:
             download_timeout: URLダウンロードのタイムアウト秒数
             max_download_size: ダウンロード可能な最大ファイルサイズ（バイト）
         """
+        import os
+        # 環境変数QUARTO_TEMPLATE_DOWNLOAD_TIMEOUTがあれば優先
+        env_dl_timeout = os.environ.get("QUARTO_TEMPLATE_DOWNLOAD_TIMEOUT")
+        if env_dl_timeout is not None:
+            try:
+                download_timeout = int(env_dl_timeout)
+            except ValueError:
+                pass  # 不正な値は無視してデフォルト/引数を使う
         self.config_path = config_path
         self.templates: Dict[str, str] = {}
         self.download_timeout = download_timeout

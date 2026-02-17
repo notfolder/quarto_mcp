@@ -107,6 +107,8 @@ class TestYAMLFrontmatterManager:
         result = manager.add_kroki_config(content)
         
         assert "---" in result
+        assert "filters:" in result
+        assert "- kroki" in result
         assert "kroki:" in result
         assert "serviceUrl: http://kroki:8000" in result
     
@@ -124,7 +126,8 @@ just a string
         result = manager.add_kroki_config(content)
         
         # エラーにならず、新しいYAMLが生成されること
-        assert "kroki:" in result
+        assert "filters:" in result
+        assert "- kroki" in result
         assert "serviceUrl: http://kroki:8000" in result
     
     def test_add_kroki_config_to_existing_yaml(self):
@@ -142,11 +145,12 @@ format: pptx
         
         assert "title: Test Document" in result
         assert "format: pptx" in result
-        assert "kroki:" in result
+        assert "filters:" in result
+        assert "- kroki" in result
         assert "serviceUrl: http://kroki:8000" in result
     
-    def test_existing_filters_preserved(self):
-        """既存のfilters配列が変更されないことをテスト."""
+    def test_no_duplicate_kroki_filter(self):
+        """krokiフィルターが重複して追加されないことをテスト."""
         manager = YAMLFrontmatterManager(kroki_service_url="http://kroki:8000")
         
         content = """---
@@ -158,10 +162,8 @@ filters:
         
         result = manager.add_kroki_config(content)
         
-        # 既存のfiltersが保持されること
-        assert "filters:" in result
-        assert "- kroki" in result
-        assert "serviceUrl: http://kroki:8000" in result
+        # krokiが1回だけ出現することを確認
+        assert result.count("- kroki") == 1
     
     def test_preserve_existing_filters(self):
         """既存のフィルターが保持されることをテスト."""
@@ -176,10 +178,8 @@ filters:
         
         result = manager.add_kroki_config(content)
         
-        # 既存のフィルターは保持され、krokiは追加されない（extension側で定義されるため）
         assert "- other-filter" in result
-        assert "kroki:" in result
-        assert "serviceUrl: http://kroki:8000" in result
+        assert "- kroki" in result
     
     def test_override_service_url(self):
         """serviceUrlが常に上書きされることをテスト."""
@@ -223,5 +223,6 @@ graph LR
         # 検証
         assert "title: Test" in result
         assert "```{kroki-mermaid-png}" in result
-        assert "kroki:" in result
+        assert "filters:" in result
+        assert "- kroki" in result
         assert "serviceUrl: http://kroki:8000" in result

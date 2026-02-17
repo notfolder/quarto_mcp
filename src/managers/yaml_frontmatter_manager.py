@@ -29,12 +29,9 @@ class YAMLFrontmatterManager:
         
         処理内容:
         1. 既存のYAMLヘッダーを抽出
-        2. kroki.serviceUrl を設定
-        3. YAMLと本文を結合して返す
-        
-        Note:
-            fermarsan/quarto-kroki拡張は_extension.ymlでフィルターを定義しているため、
-            filtersキーに明示的に追加する必要はありません。
+        2. filters配列に 'kroki' を追加（重複チェック）
+        3. kroki.serviceUrl を設定
+        4. YAMLと本文を結合して返す
         
         Args:
             content: 元のQuarto Markdownコンテンツ
@@ -98,9 +95,18 @@ class YAMLFrontmatterManager:
         if not isinstance(yaml_dict, dict):
             yaml_dict = {}
         
+        # filtersキーの処理
+        if "filters" not in yaml_dict:
+            yaml_dict["filters"] = []
+        elif not isinstance(yaml_dict["filters"], list):
+            # filtersが配列でない場合は配列に変換
+            yaml_dict["filters"] = [yaml_dict["filters"]]
+        
+        # krokiフィルターが含まれていない場合のみ追加
+        if "kroki" not in yaml_dict["filters"]:
+            yaml_dict["filters"].append("kroki")
+        
         # krokiキーの処理
-        # fermarsan/quarto-kroki拡張は_extension.ymlでフィルターを定義しているため、
-        # filtersキーに明示的に追加する必要はない
         if "kroki" not in yaml_dict:
             yaml_dict["kroki"] = {}
         elif not isinstance(yaml_dict["kroki"], dict):

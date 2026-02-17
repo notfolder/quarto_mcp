@@ -97,7 +97,7 @@ async def list_tools() -> list[Tool]:
                         "additionalProperties": True,
                     },
                 },
-                "required": ["content", "format", "output_path"],
+                "required": ["content", "format", "output_filename"],
             },
         ),
         Tool(

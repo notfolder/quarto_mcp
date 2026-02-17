@@ -58,8 +58,8 @@ class KrokiConverter:
         Mermaid記法をKroki記法に変換する.
         
         変換処理:
-        1. ```{mermaid} → ```{kroki-mermaid} または ```{kroki-mermaid-png/svg}
-        2. ```mermaid → ```{kroki-mermaid} または ```{kroki-mermaid-png/svg}
+        1. ```{mermaid} → ```kroki-mermaid
+        2. ```mermaid → ```kroki-mermaid
         
         Args:
             content: 元のQuarto Markdownコンテンツ
@@ -109,29 +109,20 @@ class KrokiConverter:
         
         ```{mermaid #fig-example}
         ↓
-        ```{kroki-mermaid #fig-example}  (image_format=None)
-        ```{kroki-mermaid-png #fig-example}  (image_format="png")
-        ```{kroki-mermaid-svg #fig-example}  (image_format="svg")
+        ```kroki-mermaid
+        
+        Note: fermarsan/quarto-kroki拡張では{オプション}形式はサポートされていないため、
+              シンプルな```kroki-mermaid形式に変換します。
         
         Args:
             content: 元のコンテンツ
-            image_format: 画像形式 (svg/png/None)
+            image_format: 画像形式 (使用されません)
             
         Returns:
             変換後のコンテンツ
         """
-        def replacer(match: re.Match) -> str:
-            options = match.group(1)  # セルオプション部分
-            
-            # Kroki記法を生成
-            if image_format:
-                kroki_lang = f"kroki-mermaid-{image_format}"
-            else:
-                kroki_lang = "kroki-mermaid"
-            
-            return f"```{{{kroki_lang}{options}}}"
-        
-        return self.QUARTO_MERMAID_PATTERN.sub(replacer, content)
+        # シンプルに```kroki-mermaidに変換（オプションは削除）
+        return self.QUARTO_MERMAID_PATTERN.sub("```kroki-mermaid", content)
     
     def _convert_markdown_syntax(self, content: str, image_format: Optional[str]) -> str:
         """
@@ -139,23 +130,13 @@ class KrokiConverter:
         
         ```mermaid
         ↓
-        ```{kroki-mermaid}  (image_format=None)
-        ```{kroki-mermaid-png}  (image_format="png")
-        ```{kroki-mermaid-svg}  (image_format="svg")
+        ```kroki-mermaid
         
         Args:
             content: 元のコンテンツ
-            image_format: 画像形式 (svg/png/None)
+            image_format: 画像形式 (使用されません)
             
         Returns:
             変換後のコンテンツ
         """
-        # Kroki記法を生成
-        if image_format:
-            kroki_lang = f"kroki-mermaid-{image_format}"
-        else:
-            kroki_lang = "kroki-mermaid"
-        
-        replacement = f"```{{{kroki_lang}}}"
-        
-        return self.MARKDOWN_MERMAID_PATTERN.sub(replacement, content)
+        return self.MARKDOWN_MERMAID_PATTERN.sub("```kroki-mermaid", content)

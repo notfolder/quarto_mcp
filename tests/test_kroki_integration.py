@@ -20,7 +20,7 @@ graph LR
         
         result = converter.convert(content)
         
-        assert "```{kroki-mermaid-png}" in result
+        assert "```kroki-mermaid" in result
         assert "graph LR" in result
         assert "A --> B" in result
     
@@ -35,7 +35,7 @@ graph TD
         
         result = converter.convert(content)
         
-        assert "```{kroki-mermaid-svg #fig-example}" in result
+        assert "```kroki-mermaid" in result
     
     def test_convert_markdown_syntax(self):
         """標準Markdown記法がKroki記法に変換されることをテスト."""
@@ -50,7 +50,7 @@ sequenceDiagram
         result = converter.convert(content)
         
         # pptxの場合、自動選択でpngになる
-        assert "```{kroki-mermaid-png}" in result
+        assert "```kroki-mermaid" in result
         assert "sequenceDiagram" in result
     
     def test_auto_format_selection_pptx(self):
@@ -60,7 +60,7 @@ sequenceDiagram
         content = "```mermaid\ngraph LR\n```"
         result = converter.convert(content)
         
-        assert "```{kroki-mermaid-png}" in result
+        assert "```kroki-mermaid" in result
     
     def test_auto_format_selection_html(self):
         """HTML出力時にSVG形式が自動選択されることをテスト."""
@@ -69,7 +69,7 @@ sequenceDiagram
         content = "```mermaid\ngraph LR\n```"
         result = converter.convert(content)
         
-        assert "```{kroki-mermaid-svg}" in result
+        assert "```kroki-mermaid" in result
     
     def test_env_var_override(self, monkeypatch):
         """環境変数が画像形式の指定を上書きすることをテスト."""
@@ -81,10 +81,10 @@ sequenceDiagram
         content = "```mermaid\ngraph LR\n```"
         result = converter.convert(content)
         
-        assert "```{kroki-mermaid-svg}" in result
+        assert "```kroki-mermaid" in result
     
     def test_preserve_cell_options(self):
-        """セルオプションが保持されることをテスト."""
+        """Quarto拡張記法のオプションは削除され、シンプルなkroki-mermaid形式に変換されることをテスト."""
         converter = KrokiConverter(format_id="pptx", image_format="png")
         
         content = """```{mermaid #fig-id .class width="80%"}
@@ -93,7 +93,9 @@ graph LR
         
         result = converter.convert(content)
         
-        assert "```{kroki-mermaid-png #fig-id .class width=\"80%\"}" in result
+        # fermarsan/quarto-krokiはシンプルな記法のみサポート
+        assert "```kroki-mermaid" in result
+        assert "graph LR" in result
 
 
 class TestYAMLFrontmatterManager:
@@ -108,7 +110,7 @@ class TestYAMLFrontmatterManager:
         
         assert "---" in result
         assert "filters:" in result
-        assert "- kroki" in result
+        assert "- quarto-kroki" in result
         assert "kroki:" in result
         assert "serviceUrl: http://kroki:8000" in result
     
@@ -127,7 +129,7 @@ just a string
         
         # エラーにならず、新しいYAMLが生成されること
         assert "filters:" in result
-        assert "- kroki" in result
+        assert "- quarto-kroki" in result
         assert "serviceUrl: http://kroki:8000" in result
     
     def test_add_kroki_config_to_existing_yaml(self):
@@ -146,7 +148,7 @@ format: pptx
         assert "title: Test Document" in result
         assert "format: pptx" in result
         assert "filters:" in result
-        assert "- kroki" in result
+        assert "- quarto-kroki" in result
         assert "serviceUrl: http://kroki:8000" in result
     
     def test_no_duplicate_kroki_filter(self):
@@ -155,7 +157,7 @@ format: pptx
         
         content = """---
 filters:
-  - kroki
+  - quarto-kroki
 ---
 
 # Content"""
@@ -163,7 +165,7 @@ filters:
         result = manager.add_kroki_config(content)
         
         # krokiが1回だけ出現することを確認
-        assert result.count("- kroki") == 1
+        assert result.count("- quarto-kroki") == 1
     
     def test_preserve_existing_filters(self):
         """既存のフィルターが保持されることをテスト."""
@@ -179,7 +181,7 @@ filters:
         result = manager.add_kroki_config(content)
         
         assert "- other-filter" in result
-        assert "- kroki" in result
+        assert "- quarto-kroki" in result
     
     def test_override_service_url(self):
         """serviceUrlが常に上書きされることをテスト."""
@@ -222,7 +224,7 @@ graph LR
         
         # 検証
         assert "title: Test" in result
-        assert "```{kroki-mermaid-png}" in result
+        assert "```kroki-mermaid" in result
         assert "filters:" in result
-        assert "- kroki" in result
+        assert "- quarto-kroki" in result
         assert "serviceUrl: http://kroki:8000" in result

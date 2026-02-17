@@ -102,9 +102,9 @@ class YAMLFrontmatterManager:
             # filtersが配列でない場合は配列に変換
             yaml_dict["filters"] = [yaml_dict["filters"]]
         
-        # krokiフィルターが含まれていない場合のみ追加
-        if "kroki" not in yaml_dict["filters"]:
-            yaml_dict["filters"].append("kroki")
+        # quarto-krokiフィルターが含まれていない場合のみ追加
+        if "quarto-kroki" not in yaml_dict["filters"]:
+            yaml_dict["filters"].append("quarto-kroki")
         
         # krokiキーの処理
         if "kroki" not in yaml_dict:

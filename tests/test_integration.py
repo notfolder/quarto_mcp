@@ -54,20 +54,20 @@ async def test_render_to_html():
 """
     
     with tempfile.TemporaryDirectory() as temp_dir:
-        output_path = Path(temp_dir) / "output.html"
+        output_filename = Path(temp_dir) / "output.html"
         
         # レンダリング実行
         result = await renderer.render(
             content=content,
             format_id="html",
-            output_path=str(output_path),
+            output_filename=str(output_filename),
         )
         
         # 結果の検証
         assert result.success is True
         assert result.format == "html"
-        assert result.output.path == str(output_path)
-        assert output_path.exists()
+        assert result.output.path == str(output_filename)
+        assert output_filename.exists()
         assert result.output.size_bytes > 0
         assert result.metadata.quarto_version
         assert result.metadata.render_time_ms > 0
@@ -90,18 +90,18 @@ author: "テスト作成者"
 """
     
     with tempfile.TemporaryDirectory() as temp_dir:
-        output_path = Path(temp_dir) / "output.html"
+        output_filename = Path(temp_dir) / "output.html"
         
         # レンダリング実行
         result = await renderer.render(
             content=content,
             format_id="html",
-            output_path=str(output_path),
+            output_filename=str(output_filename),
         )
         
         # 結果の検証
         assert result.success is True
-        assert output_path.exists()
+        assert output_filename.exists()
 
 
 @pytest.mark.asyncio
@@ -112,14 +112,14 @@ async def test_render_invalid_format():
     content = "# テスト"
     
     with tempfile.TemporaryDirectory() as temp_dir:
-        output_path = Path(temp_dir) / "output.txt"
+        output_filename = Path(temp_dir) / "output.txt"
         
         # 不正な形式ID
         with pytest.raises(QuartoRenderError) as exc_info:
             await renderer.render(
                 content=content,
                 format_id="invalid_format",
-                output_path=str(output_path),
+                output_filename=str(output_filename),
             )
         
         assert exc_info.value.code == "UNSUPPORTED_FORMAT"
@@ -252,27 +252,27 @@ sequenceDiagram
     output_dir = Path(__file__).parent.parent / "test_output"
     output_dir.mkdir(exist_ok=True)
     
-    output_path = output_dir / "demo_presentation.pptx"
+    output_filename = output_dir / "demo_presentation.pptx"
     
     # レンダリング実行
     result = await renderer.render(
         content=content,
         format_id="pptx",
-        output_path=str(output_path),
+        output_filename=str(output_filename),
     )
     
     # 結果の検証
     assert result.success is True
     assert result.format == "pptx"
-    assert output_path.exists()
+    assert output_filename.exists()
     assert result.output.size_bytes > 0
     
     # テスト成功時にファイルパスを表示
-    print(f"\n✅ PowerPointファイルが生成されました: {output_path.absolute()}")
+    print(f"\n✅ PowerPointファイルが生成されました: {output_filename.absolute()}")
     print(f"   ファイルサイズ: {result.output.size_bytes:,} bytes")
     print(f"   変換時間: {result.metadata.render_time_ms} ms")
     print(f"\n   以下のコマンドでファイルを開けます:")
-    print(f"   open {output_path.absolute()}")
+    print(f"   open {output_filename.absolute()}")
 
 
 if __name__ == "__main__":

@@ -18,7 +18,7 @@ from src.models.schemas import RenderResult, ErrorResponse, ErrorInfo
 async def render(
     content: str,
     format: str,
-    output_path: str,
+    output_filename: str,
     template: Optional[str] = None,
     format_options: Optional[Dict[str, Any]] = None,
     config_path: Optional[Path] = None,
@@ -29,7 +29,7 @@ async def render(
     Args:
         content: Quarto Markdown形式の文字列
         format: 出力形式ID
-        output_path: 出力ファイルを生成する絶対パス
+        output_filename: 出力ファイル名
         template: テンプレート指定（IDまたはURL）
         format_options: 出力形式固有のオプション設定
         config_path: テンプレート設定ファイルのパス
@@ -48,7 +48,7 @@ async def render(
         result = await renderer.render(
             content=content,
             format_id=format,
-            output_path=output_path,
+            output_filename=output_filename,
             template=template,
             format_options=format_options,
         )

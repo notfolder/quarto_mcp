@@ -127,7 +127,7 @@ quarto render document.qmd
 flowchart TD
     A["MCP Client<br/>(LLM/AI Tool)"] -->|MCP Protocol| B["MCP Server<br/>Tools:<br/>- render<br/>- formats"]
     B --> C["Conversion Engine<br/>┌───────────┐<br/>│ Renderer  │<br/>├───────────┤<br/>│ File Mgr  │<br/>├───────────┤<br/>│ Template  │<br/>└───────────┘"]
-    C --> D["Quarto CLI Executor<br/>┌─────────────┐<br/>│ temp.qmd    │<br/>│ ↓ render    │<br/>│ output_path │<br/>└─────────────┘"]
+    C --> D["Quarto CLI Executor<br/>┌─────────────┐<br/>│ temp.qmd    │<br/>│ ↓ render    │<br/>│ output_filename │<br/>└─────────────┘"]
     D --> E["Output Handler<br/>- File check<br/>- Cleanup temp"]
     
     style A fill:#e1f5ff
@@ -193,7 +193,7 @@ flowchart TD
 - 許可値: `pptx`, `html`, `pdf`, `docx`, `revealjs`, `beamer`, `gfm`, `commonmark`, `epub`, `jats`, `ipynb`, `rtf`, `rst`, `asciidoc`, `org`, `mediawiki`, `dokuwiki`, `zimwiki`, `jira`, `xwiki`, `context`, `texinfo`, `man`
 - 推奨: `pptx`（PowerPoint）を最優先
 
-**output_path（必須）**
+**output_filename（必須）**
 - データ型: 文字列
 - 説明: 出力ファイルを生成する絶対パス
 
@@ -352,7 +352,7 @@ tool.hatchセクション（使用する場合）:
 入力:
 - `content`: 変換対象のQuarto Markdown文字列
 - `format`: 出力形式ID
-- `output_path`: 出力ファイルの絶対パス
+- `output_filename`: 出力ファイルの絶対パス
 - `template`: PowerPointテンプレート指定（任意、pptx形式時のみ有効）
 - `format_options`: 形式固有オプション（任意）
 
@@ -378,7 +378,7 @@ tool.hatchセクション（使用する場合）:
    - PowerPointでテンプレート指定がある場合、YAMLに`reference-doc: <template_path>`を追加
    - この方針により、コンテンツ内の既存設定を活かしつつ、MCPツール呼び出し側の意図を最終的に反映
 5. Quarto CLIコマンドを構築:
-   - `quarto render <temp_qmd_path> --to <format> --output <output_path> --no-execute`
+   - `quarto render <temp_qmd_path> --to <format> --output <output_filename> --no-execute`
 6. 非同期でQuarto CLIプロセスを起動し、完了を待機
 7. プロセスの標準出力/標準エラー出力をキャプチャ
 8. 出力ファイルの存在を確認（存在しない場合はエラー）
@@ -1609,7 +1609,7 @@ Mermaidバリデーション設定を追加する設定ファイルの場所と�
   "arguments": {
     "content": "# スライド\\n\\n```{mermaid}\\ngraph TD\\n    A --> B\\n```",
     "format": "pptx",
-    "output_path": "/path/to/output.pptx"
+    "output_filename": "/path/to/output.pptx"
   }
 }
 ```

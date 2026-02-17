@@ -56,6 +56,6 @@ class RenderRequest(BaseModel):
     
     content: str = Field(description="Quarto Markdown形式の文字列")
     format: str = Field(description="出力形式ID")
-    output_path: str = Field(description="出力ファイルを生成する絶対パス")
+    output_filename: str = Field(description="出力ファイル名")
     template: Optional[str] = Field(default=None, description="テンプレート指定（IDまたはURL）")
     format_options: Dict[str, Any] = Field(default_factory=dict, description="出力形式固有のオプション設定")

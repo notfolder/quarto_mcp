@@ -74,7 +74,7 @@ Quarto Markdownを指定形式に変換します。
 **パラメータ:**
 - `content` (必須): Quarto Markdown形式の文字列
 - `format` (必須): 出力形式ID（pptx, html, pdf, docx等）
-- `output_path` (必須): 出力ファイルの絶対パス
+- `output_filename` (必須): 出力ファイルの絶対パス
 - `template` (任意): PowerPointテンプレート指定
   - テンプレートID（templates.yamlで定義）
   - HTTP/HTTPS URL（.pptxファイル）- 自動ダウンロード対応
@@ -87,7 +87,7 @@ Quarto Markdownを指定形式に変換します。
 {
   "content": "# スライドタイトル\n\n内容",
   "format": "pptx",
-  "output_path": "/path/to/output.pptx",
+  "output_filename": "/path/to/output.pptx",
   "template": "corporate_standard"
 }
 
@@ -95,7 +95,7 @@ Quarto Markdownを指定形式に変換します。
 {
   "content": "# スライドタイトル\n\n内容",
   "format": "pptx",
-  "output_path": "/path/to/output.pptx",
+  "output_filename": "/path/to/output.pptx",
   "template": "https://example.com/templates/custom.pptx"
 }
 ```

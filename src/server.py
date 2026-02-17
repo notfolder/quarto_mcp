@@ -78,9 +78,9 @@ async def list_tools() -> list[Tool]:
                             "context", "texinfo", "man", "odt", "epub", "typst",
                         ],
                     },
-                    "output_path": {
+                    "output_filename": {
                         "type": "string",
-                        "description": "Absolute path for the output file",
+                        "description": "output file name",
                     },
                     "template": {
                         "type": "string",
@@ -152,13 +152,13 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
         # 必須パラメータの検証
         content = arguments.get("content")
         format_id = arguments.get("format")
-        output_path = arguments.get("output_path")
+        output_filename = arguments.get("output_filename")
         
-        if not content or not format_id or not output_path:
+        if not content or not format_id or not output_filename:
             return [
                 TextContent(
                     type="text",
-                    text="Error: Missing required parameters (content, format, output_path)",
+                    text="Error: Missing required parameters (content, format, output_filename)",
                 )
             ]
         
@@ -170,7 +170,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
         result = await render.render(
             content=content,
             format=format_id,
-            output_path=output_path,
+            output_filename=output_filename,
             template=template,
             format_options=format_options,
             config_path=config_path if config_path.exists() else None,

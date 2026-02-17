@@ -61,7 +61,7 @@ class QuartoRenderer:
         self,
         content: str,
         format_id: str,
-        output_path: str,
+        output_filename: str,
         template: Optional[str] = None,
         format_options: Optional[Dict[str, Any]] = None,
     ) -> RenderResult:
@@ -71,7 +71,7 @@ class QuartoRenderer:
         Args:
             content: Quarto Markdown形式の文字列
             format_id: 出力形式ID
-            output_path: 出力ファイルの絶対パス
+            output_filename: 出力ファイルの絶対パス
             template: テンプレート指定（IDまたはURL）
             format_options: 形式固有オプション
             
@@ -106,7 +106,7 @@ class QuartoRenderer:
             self._write_qmd(qmd_path, content, format_id, format_options, template_path)
             
             # 最終的な出力パス
-            final_output_path = Path(output_path)
+            final_output_path = Path(output_filename)
             final_output_path.parent.mkdir(parents=True, exist_ok=True)
             
             # 一時ディレクトリ内での出力ファイル名（拡張子を取得）

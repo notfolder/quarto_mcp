@@ -236,7 +236,7 @@ class MermaidExtractor:
                 
                 # Mermaid構文要素（矢印記号など）をチェック
                 if line_num not in reported_lines:
-                    arrow_pattern = r'(-->|---|==>|\.\.>)'
+                    arrow_pattern = r'(-->)'
                     if re.search(arrow_pattern, cleaned_line):
                         issues.append({
                             'line': line_num,

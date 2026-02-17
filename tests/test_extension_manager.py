@@ -152,6 +152,25 @@ class TestExtensionManager:
         assert is_valid is True
         assert error_message == ""
     
+    def test_validate_extension_success_with_authors(self, tmp_path):
+        """拡張の検証が成功する場合のテスト（authorsキー使用）."""
+        # 有効な拡張を作成（authorsを使用）
+        ext_dir = tmp_path / "_extensions" / "fermarsan" / "quarto-kroki"
+        ext_dir.mkdir(parents=True)
+        
+        config = {
+            "title": "quarto-kroki",
+            "authors": ["Fernando Martínez Santa", "Behzad Samadi"],
+            "version": "0.1.2",
+        }
+        with open(ext_dir / "_extension.yml", "w") as f:
+            yaml.dump(config, f)
+        
+        manager = ExtensionManager()
+        is_valid, error_message = manager._validate_extension(tmp_path)
+        assert is_valid is True
+        assert error_message == ""
+    
     def test_validate_extension_missing_file(self, tmp_path):
         """_extension.ymlが存在しない場合の検証テスト."""
         manager = ExtensionManager()

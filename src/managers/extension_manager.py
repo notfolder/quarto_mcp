@@ -266,8 +266,13 @@ class ExtensionManager:
                 return False, f"YAMLファイルが空です。内容: {content[:200]}"
             
             # 必須キーの存在確認
-            required_keys = ["title", "author", "version"]
+            # titleとversionは必須、author/authorsはどちらか一方が必須
+            required_keys = ["title", "version"]
             missing_keys = [key for key in required_keys if key not in config]
+            
+            # authorまたはauthorsが存在するか確認
+            if "author" not in config and "authors" not in config:
+                missing_keys.append("author/authors")
             
             if missing_keys:
                 return False, (

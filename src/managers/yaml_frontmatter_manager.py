@@ -61,11 +61,18 @@ class YAMLFrontmatterManager:
         match = self.YAML_HEADER_PATTERN.match(content)
         
         if match:
-            yaml_str = match.group(1)
+            yaml_str = match.group(1).strip()  # 前後の空白を削除
             body = match.group(2)
+            
+            # 空の場合は空辞書を返す
+            if not yaml_str:
+                return {}, body
             
             try:
                 yaml_dict = yaml.safe_load(yaml_str)
+                # 辞書でない場合は空辞書として扱う
+                if not isinstance(yaml_dict, dict):
+                    return {}, body
                 return yaml_dict if yaml_dict else {}, body
             except yaml.YAMLError:
                 # YAML解析エラーの場合は空辞書として扱う
@@ -84,7 +91,8 @@ class YAMLFrontmatterManager:
         Returns:
             Kroki設定がマージされたYAML辞書
         """
-        if yaml_dict is None:
+        # 辞書でない場合は空辞書を使用
+        if not isinstance(yaml_dict, dict):
             yaml_dict = {}
         
         # filtersキーの処理

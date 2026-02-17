@@ -112,6 +112,24 @@ class TestYAMLFrontmatterManager:
         assert "kroki:" in result
         assert "serviceUrl: http://kroki:8000" in result
     
+    def test_add_kroki_config_to_string_yaml(self):
+        """文字列型のYAML（不正なYAML）を処理できることをテスト."""
+        manager = YAMLFrontmatterManager(kroki_service_url="http://kroki:8000")
+        
+        # YAMLとして文字列が返される場合のテスト
+        content = """---
+just a string
+---
+
+# Content"""
+        
+        result = manager.add_kroki_config(content)
+        
+        # エラーにならず、新しいYAMLが生成されること
+        assert "filters:" in result
+        assert "- kroki" in result
+        assert "serviceUrl: http://kroki:8000" in result
+    
     def test_add_kroki_config_to_existing_yaml(self):
         """既存のYAMLにKroki設定が追加されることをテスト."""
         manager = YAMLFrontmatterManager(kroki_service_url="http://kroki:8000")

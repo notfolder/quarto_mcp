@@ -213,14 +213,23 @@ class QuartoRenderer:
             (YAMLヘッダー辞書, 本文) のタプル
         """
         # YAMLヘッダーのパターン（先頭の---で始まる）
+        # 空のYAMLヘッダーにも対応するため、改行を\s*に変更
         pattern = r'^---\s*\n(.*?)\n---\s*\n(.*)$'
         match = re.match(pattern, content, re.DOTALL)
         
         if match:
-            yaml_str = match.group(1)
+            yaml_str = match.group(1).strip()  # 前後の空白を削除
             body = match.group(2)
+            
+            # 空の場合は空辞書を返す
+            if not yaml_str:
+                return {}, body
+            
             try:
                 yaml_dict = yaml.safe_load(yaml_str)
+                # 辞書でない場合は空の辞書を返す
+                if not isinstance(yaml_dict, dict):
+                    return {}, body
                 return yaml_dict if yaml_dict else {}, body
             except yaml.YAMLError:
                 # YAML解析エラーの場合は無視
@@ -247,8 +256,11 @@ class QuartoRenderer:
         Returns:
             マージされたYAMLヘッダー
         """
-        # ベースとなるYAML
-        merged = existing_yaml.copy() if existing_yaml else {}
+        # ベースとなるYAML（辞書でない場合は空の辞書を使用）
+        if existing_yaml and isinstance(existing_yaml, dict):
+            merged = existing_yaml.copy()
+        else:
+            merged = {}
         
         # format固有の設定を追加
         if format_id not in merged:

@@ -71,8 +71,8 @@ KrokiサービスのエンドポイントURLを指定する環境変数。
 - quarto-kroki拡張を含む`_extensions`ディレクトリのパスを指定
 - デフォルト値: `/opt/quarto-project/_extensions`
 - 動作:
-  - 指定されたパスが存在し、その中に`quarto-ext/kroki/_extension.yml`がある場合、そこから拡張をコピー
-  - 存在しない場合、親ディレクトリで`quarto add quarto-ext/kroki`コマンドを実行して拡張を取得
+  - 指定されたパスが存在し、その中に`fermarsan/quarto-kroki/_extension.yml`がある場合、そこから拡張をコピー
+  - 存在しない場合、親ディレクトリで`quarto add fermarsan/quarto-kroki`コマンドを実行して拡張を取得
   - レンダリング時、.qmdファイルと同じディレクトリに`_extensions`ディレクトリ全体をコピー
 - 用途: 拡張のキャッシュ管理、複数拡張の一括管理、オフライン環境での利用
 
@@ -80,10 +80,10 @@ KrokiサービスのエンドポイントURLを指定する環境変数。
 
 #### 自動配置機能
 
-quarto-kroki拡張は、quarto-ext/krokiの仕様により、.qmdファイルと同じディレクトリに`_extensions/quarto-ext/kroki`として存在する必要がある。本システムは、レンダリング時に自動的に拡張を配置する機能を提供する。
+quarto-kroki拡張は、fermarsan/quarto-krokiの仕様により、.qmdファイルと同じディレクトリに`_extensions/fermarsan/quarto-kroki`として存在する必要がある。本システムは、レンダリング時に自動的に拡張を配置する機能を提供する。
 
 **使用する拡張:**
-- GitHub リポジトリ: quarto-ext/kroki
+- GitHub リポジトリ: fermarsan/quarto-kroki
 - 選定理由: SVG/PNG形式の指定が可能で、カスタムサービスURLの指定に対応している
 
 **自動配置の動作:**
@@ -91,7 +91,7 @@ quarto-kroki拡張は、quarto-ext/krokiの仕様により、.qmdファイルと
 1. **拡張の取得元確認:**
    - `QUARTO_MCP_EXTENSIONS_SOURCE`環境変数で指定されたパスを確認
    - デフォルト: `/opt/quarto-project/_extensions`
-   - 指定されたパスの`quarto-ext/kroki/_extension.yml`が存在するか確認
+   - 指定されたパスの`fermarsan/quarto-kroki/_extension.yml`が存在するか確認
 
 2. **拡張が存在する場合:**
    - `QUARTO_MCP_EXTENSIONS_SOURCE`ディレクトリ全体を一時ディレクトリの`_extensions`にコピー
@@ -99,13 +99,13 @@ quarto-kroki拡張は、quarto-ext/krokiの仕様により、.qmdファイルと
 
 3. **拡張が存在しない場合:**
    - `QUARTO_MCP_EXTENSIONS_SOURCE`の親ディレクトリ（デフォルト: `/opt/quarto-project`）に移動
-   - `quarto add quarto-ext/kroki --no-prompt`コマンドを実行
-   - Quartoが`_extensions/quarto-ext/kroki`として拡張を自動配置
+   - `quarto add fermarsan/quarto-kroki --no-prompt`コマンドを実行
+   - Quartoが`_extensions/fermarsan/quarto-kroki`として拡張を自動配置
    - 作成された`_extensions`ディレクトリ全体を一時ディレクトリにコピー
 
 4. **レンダリング時の配置:**
    - Quarto CLIを実行する前に、一時.qmdファイルと同じディレクトリに`_extensions`ディレクトリをコピー
-   - `_extensions/quarto-ext/kroki/_extension.yml`の存在を検証
+   - `_extensions/fermarsan/quarto-kroki/_extension.yml`の存在を検証
    - 配置に失敗した場合はエラーを返す
 
 #### 手動での事前準備（オプション）
@@ -120,10 +120,10 @@ mkdir -p /opt/quarto-project
 cd /opt/quarto-project
 
 # Quarto CLIで拡張をインストール
-quarto add quarto-ext/kroki --no-prompt
+quarto add fermarsan/quarto-kroki --no-prompt
 
-# _extensions/quarto-ext/kroki ディレクトリが作成される
-ls _extensions/quarto-ext/kroki/_extension.yml  # 確認
+# _extensions/fermarsan/quarto-kroki ディレクトリが作成される
+ls _extensions/fermarsan/quarto-kroki/_extension.yml  # 確認
 ```
 
 **方法2: 既存プロジェクトからコピー**
@@ -141,7 +141,7 @@ cp -r /path/to/existing/project/_extensions /opt/quarto-project/
 ```bash
 # プロジェクトディレクトリに拡張をインストール
 cd /path/to/your/project
-quarto add quarto-ext/kroki --no-prompt
+quarto add fermarsan/quarto-kroki --no-prompt
 
 # 環境変数で_extensionsディレクトリのパスを指定
 export QUARTO_MCP_EXTENSIONS_SOURCE=/path/to/your/project/_extensions
@@ -400,13 +400,13 @@ sequenceDiagram
 
 **ステップ2: 拡張の配置**
 1. 環境変数`QUARTO_MCP_EXTENSIONS_SOURCE`からソースディレクトリのパスを取得（デフォルト: `/opt/quarto-project/_extensions`）
-2. ソースディレクトリに`quarto-ext/kroki/_extension.yml`が存在するか確認
+2. ソースディレクトリに`fermarsan/quarto-kroki/_extension.yml`が存在するか確認
 3. 存在する場合はソースディレクトリから`_extensions`全体をコピー
 4. 存在しない場合は以下の処理を実行:
-   - 親ディレクトリ（デフォルト: `/opt/quarto-project`）で`quarto add quarto-ext/kroki --no-prompt`を実行
-   - ソースディレクトリに`_extensions/quarto-ext/kroki`が自動作成される
+   - 親ディレクトリ（デフォルト: `/opt/quarto-project`）で`quarto add fermarsan/quarto-kroki --no-prompt`を実行
+   - ソースディレクトリに`_extensions/fermarsan/quarto-kroki`が自動作成される
 5. 一時ディレクトリに`_extensions`ディレクトリ全体を配置
-6. `_extensions/quarto-ext/kroki/_extension.yml`の存在を検証
+6. `_extensions/fermarsan/quarto-kroki/_extension.yml`の存在を検証
 7. 検証に失敗した場合はエラーを返す
 
 **ステップ3: Mermaid記法の変換**
@@ -563,25 +563,25 @@ quarto-kroki拡張の取得、保存、配置を管理する。
 - 入力: 配置先ディレクトリパス（一時ディレクトリ）
 - 出力: なし（エラー時に例外を発生）
 - 処理: 
-  1. `QUARTO_MCP_EXTENSIONS_SOURCE`の`quarto-ext/kroki/_extension.yml`が存在するか確認
+  1. `QUARTO_MCP_EXTENSIONS_SOURCE`の`fermarsan/quarto-kroki/_extension.yml`が存在するか確認
   2. 存在する場合は`QUARTO_MCP_EXTENSIONS_SOURCE`ディレクトリ全体をコピー処理へ
   3. 存在しない場合はQuarto addコマンドを実行後、作成された`_extensions`をコピー処理へ
-  4. 配置先の`_extensions/quarto-ext/kroki/_extension.yml`を検証
+  4. 配置先の`_extensions/fermarsan/quarto-kroki/_extension.yml`を検証
 
 **拡張存在確認メソッド:**
 - 入力: なし
 - 出力: 拡張が存在するかの真偽値
-- 処理: `QUARTO_MCP_EXTENSIONS_SOURCE`の`quarto-ext/kroki/_extension.yml`の存在確認
+- 処理: `QUARTO_MCP_EXTENSIONS_SOURCE`の`fermarsan/quarto-kroki/_extension.yml`の存在確認
 
 **拡張インストールメソッド:**
 - 入力: なし
 - 出力: なし（エラー時に例外を発生）
 - 処理: 
   1. `QUARTO_MCP_EXTENSIONS_SOURCE`の親ディレクトリ（デフォルト: `/opt/quarto-project`）に移動
-  2. `quarto add quarto-ext/kroki --no-prompt`コマンドを実行
+  2. `quarto add fermarsan/quarto-kroki --no-prompt`コマンドを実行
   3. コマンドの標準出力・標準エラーをキャプチャ
   4. 終了コードが0でない場合は例外を発生
-  5. `_extensions/quarto-ext/kroki/_extension.yml`の存在を確認
+  5. `_extensions/fermarsan/quarto-kroki/_extension.yml`の存在を確認
 
 **拡張コピーメソッド:**
 - 入力: 配置先ディレクトリパス
@@ -595,7 +595,7 @@ quarto-kroki拡張の取得、保存、配置を管理する。
 - 入力: 配置先ディレクトリパス
 - 出力: 検証結果の真偽値
 - 処理: 
-  1. `_extensions/quarto-ext/kroki/_extension.yml`の存在確認
+  1. `_extensions/fermarsan/quarto-kroki/_extension.yml`の存在確認
   2. YAMLファイルのパース
   3. 必須キー（name、author、version）の存在確認
 

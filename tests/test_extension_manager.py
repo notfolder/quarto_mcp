@@ -32,7 +32,7 @@ class TestExtensionManager:
     def test_check_extension_exists_true(self, tmp_path):
         """拡張が存在する場合にTrueを返すことを確認."""
         # テスト用の拡張ディレクトリを作成
-        ext_dir = tmp_path / "_extensions" / "resepemb" / "kroki"
+        ext_dir = tmp_path / "_extensions" / "quarto-ext" / "kroki"
         ext_dir.mkdir(parents=True)
         (ext_dir / "_extension.yml").write_text("name: kroki\n")
         
@@ -48,7 +48,7 @@ class TestExtensionManager:
     def test_install_extension_success(self, mock_run, tmp_path):
         """quarto addコマンドが成功する場合のテスト."""
         # 拡張ディレクトリを作成
-        ext_dir = tmp_path / "_extensions" / "resepemb" / "kroki"
+        ext_dir = tmp_path / "_extensions" / "quarto-ext" / "kroki"
         ext_dir.mkdir(parents=True)
         (ext_dir / "_extension.yml").write_text("name: kroki\n")
         
@@ -65,7 +65,7 @@ class TestExtensionManager:
         # quarto addコマンドが正しく呼ばれたことを確認
         mock_run.assert_called_once()
         args = mock_run.call_args
-        assert args[0][0] == ["quarto", "add", "resepemb/quarto-kroki", "--no-prompt"]
+        assert args[0][0] == ["quarto", "add", "quarto-ext/kroki", "--no-prompt"]
         assert args[1]["cwd"] == str(tmp_path)
     
     @patch("subprocess.run")
@@ -96,7 +96,7 @@ class TestExtensionManager:
         """拡張のコピーが成功する場合のテスト."""
         # ソースディレクトリを作成
         source_dir = tmp_path / "source" / "_extensions"
-        ext_dir = source_dir / "resepemb" / "kroki"
+        ext_dir = source_dir / "quarto-ext" / "kroki"
         ext_dir.mkdir(parents=True)
         (ext_dir / "_extension.yml").write_text("name: kroki\n")
         (ext_dir / "kroki.lua").write_text("-- Lua code\n")
@@ -109,34 +109,34 @@ class TestExtensionManager:
         manager._copy_extension(target_dir)
         
         # コピーされたファイルの確認
-        assert (target_dir / "_extensions" / "resepemb" / "kroki" / "_extension.yml").exists()
-        assert (target_dir / "_extensions" / "resepemb" / "kroki" / "kroki.lua").exists()
+        assert (target_dir / "_extensions" / "quarto-ext" / "kroki" / "_extension.yml").exists()
+        assert (target_dir / "_extensions" / "quarto-ext" / "kroki" / "kroki.lua").exists()
     
     def test_copy_extension_overwrites_existing(self, tmp_path):
         """既存の_extensionsディレクトリを上書きすることを確認."""
         # ソースディレクトリを作成
         source_dir = tmp_path / "source" / "_extensions"
-        ext_dir = source_dir / "resepemb" / "kroki"
+        ext_dir = source_dir / "quarto-ext" / "kroki"
         ext_dir.mkdir(parents=True)
         (ext_dir / "_extension.yml").write_text("name: kroki\nversion: 2.0\n")
         
         # ターゲットディレクトリに既存のファイルを作成
         target_dir = tmp_path / "target"
-        existing_ext = target_dir / "_extensions" / "resepemb" / "kroki"
+        existing_ext = target_dir / "_extensions" / "quarto-ext" / "kroki"
         existing_ext.mkdir(parents=True)
         (existing_ext / "_extension.yml").write_text("name: kroki\nversion: 1.0\n")
         
         manager = ExtensionManager(extensions_source=str(source_dir))
         manager._copy_extension(target_dir)
         
-        # 新しいバージョンで上書きされていることを確認
-        content = (target_dir / "_extensions" / "resepemb" / "kroki" / "_extension.yml").read_text()
+        # 新しいバージョンに上書きされたことを確認
+        content = (target_dir / "_extensions" / "quarto-ext" / "kroki" / "_extension.yml").read_text()
         assert "version: 2.0" in content
     
     def test_validate_extension_success(self, tmp_path):
         """拡張の検証が成功する場合のテスト."""
         # 有効な拡張を作成
-        ext_dir = tmp_path / "_extensions" / "resepemb" / "kroki"
+        ext_dir = tmp_path / "_extensions" / "quarto-ext" / "kroki"
         ext_dir.mkdir(parents=True)
         
         config = {
@@ -161,7 +161,7 @@ class TestExtensionManager:
     
     def test_validate_extension_missing_required_keys(self, tmp_path):
         """必須キーが欠けている場合の検証テスト."""
-        ext_dir = tmp_path / "_extensions" / "resepemb" / "kroki"
+        ext_dir = tmp_path / "_extensions" / "quarto-ext" / "kroki"
         ext_dir.mkdir(parents=True)
         
         # titleキーのみ（authorとversionが欠けている）
@@ -176,7 +176,7 @@ class TestExtensionManager:
     
     def test_validate_extension_invalid_yaml(self, tmp_path):
         """無効なYAMLの場合の検証テスト."""
-        ext_dir = tmp_path / "_extensions" / "resepemb" / "kroki"
+        ext_dir = tmp_path / "_extensions" / "quarto-ext" / "kroki"
         ext_dir.mkdir(parents=True)
         
         # 無効なYAMLを書き込む
@@ -191,7 +191,7 @@ class TestExtensionManager:
         """deploy_extensionの完全なフローのテスト（拡張が既に存在する場合）."""
         # ソースディレクトリに拡張を作成
         source_dir = tmp_path / "source" / "_extensions"
-        ext_dir = source_dir / "resepemb" / "kroki"
+        ext_dir = source_dir / "quarto-ext" / "kroki"
         ext_dir.mkdir(parents=True)
         
         config = {
@@ -210,7 +210,7 @@ class TestExtensionManager:
         manager.deploy_extension(target_dir)
         
         # 拡張が正しく配置されたことを確認
-        assert (target_dir / "_extensions" / "resepemb" / "kroki" / "_extension.yml").exists()
+        assert (target_dir / "_extensions" / "quarto-ext" / "kroki" / "_extension.yml").exists()
     
     @patch("subprocess.run")
     def test_deploy_extension_with_install(self, mock_run, tmp_path):
@@ -221,7 +221,7 @@ class TestExtensionManager:
         # subprocess.runのモック
         def side_effect(*args, **kwargs):
             # quarto addコマンド実行後に拡張ディレクトリを作成
-            ext_dir = source_dir / "resepemb" / "kroki"
+            ext_dir = source_dir / "quarto-ext" / "kroki"
             ext_dir.mkdir(parents=True)
             config = {
                 "title": "kroki",
@@ -250,13 +250,13 @@ class TestExtensionManager:
         assert mock_run.called
         
         # 拡張が正しく配置されたことを確認
-        assert (target_dir / "_extensions" / "resepemb" / "kroki" / "_extension.yml").exists()
+        assert (target_dir / "_extensions" / "quarto-ext" / "kroki" / "_extension.yml").exists()
     
     def test_deploy_extension_validation_failed(self, tmp_path):
         """拡張の検証に失敗した場合のテスト."""
         # ソースディレクトリに無効な拡張を作成
         source_dir = tmp_path / "source" / "_extensions"
-        ext_dir = source_dir / "resepemb" / "kroki"
+        ext_dir = source_dir / "quarto-ext" / "kroki"
         ext_dir.mkdir(parents=True)
         
         # _extension.ymlを作成するが、titleキーがない（無効）

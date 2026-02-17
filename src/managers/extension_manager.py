@@ -65,7 +65,8 @@ class ExtensionManager:
         self._copy_extension(target_dir)
         
         # 検証
-        if not self._validate_extension(target_dir):
+        is_valid, error_message = self._validate_extension(target_dir)
+        if not is_valid:
             # デバッグ情報を収集
             debug_info = []
             debug_info.append(f"拡張ソースパス: {self.extensions_source}")
@@ -91,6 +92,9 @@ class ExtensionManager:
             expected_yml = target_dir / '_extensions' / 'resepemb' / 'kroki' / '_extension.yml'
             debug_info.append(f"\n期待されるパス: {expected_yml}")
             debug_info.append(f"期待されるパス存在: {expected_yml.exists()}")
+            
+            # バリデーションエラーの詳細を追加
+            debug_info.append(f"\n【バリデーションエラー】\n{error_message}")
             
             raise FileNotFoundError(
                 "EXTENSION_INVALID: 配置後の拡張が無効です。\n"
@@ -235,7 +239,7 @@ class ExtensionManager:
                 f"デバッグ情報:\n" + "\n".join(debug_info)
             )
     
-    def _validate_extension(self, target_dir: Path) -> bool:
+    def _validate_extension(self, target_dir: Path) -> tuple[bool, str]:
         """
         配置した拡張を検証する.
         
@@ -243,27 +247,37 @@ class ExtensionManager:
             target_dir: 配置先ディレクトリのパス
             
         Returns:
-            検証が成功した場合はTrue、失敗した場合はFalse
+            (検証結果, エラーメッセージ) のタプル
         """
         extension_yml = (
             target_dir / "_extensions" / "resepemb" / "kroki" / "_extension.yml"
         )
         
         if not extension_yml.exists():
-            return False
+            return False, f"_extension.ymlが存在しません: {extension_yml}"
         
         try:
             # YAMLファイルをパースして必須キーを確認
             with open(extension_yml, "r", encoding="utf-8") as f:
-                config = yaml.safe_load(f)
+                content = f.read()
+                config = yaml.safe_load(content)
+            
+            if config is None:
+                return False, f"YAMLファイルが空です。内容: {content[:200]}"
             
             # 必須キーの存在確認
-            required_keys = ["name", "author", "version"]
-            for key in required_keys:
-                if key not in config:
-                    return False
+            required_keys = ["title", "author", "version"]
+            missing_keys = [key for key in required_keys if key not in config]
             
-            return True
+            if missing_keys:
+                return False, (
+                    f"必須キーが不足しています: {missing_keys}\n"
+                    f"YAMLの内容: {config}"
+                )
             
-        except Exception:
-            return False
+            return True, ""
+            
+        except yaml.YAMLError as e:
+            return False, f"YAMLパースエラー: {e}\nファイルパス: {extension_yml}"
+        except Exception as e:
+            return False, f"検証エラー: {type(e).__name__}: {e}"

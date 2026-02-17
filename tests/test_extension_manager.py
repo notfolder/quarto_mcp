@@ -140,7 +140,7 @@ class TestExtensionManager:
         ext_dir.mkdir(parents=True)
         
         config = {
-            "name": "kroki",
+            "title": "kroki",
             "author": "Test Author",
             "version": "1.0.0",
         }
@@ -148,25 +148,31 @@ class TestExtensionManager:
             yaml.dump(config, f)
         
         manager = ExtensionManager()
-        assert manager._validate_extension(tmp_path) is True
+        is_valid, error_message = manager._validate_extension(tmp_path)
+        assert is_valid is True
+        assert error_message == ""
     
     def test_validate_extension_missing_file(self, tmp_path):
         """_extension.ymlが存在しない場合の検証テスト."""
         manager = ExtensionManager()
-        assert manager._validate_extension(tmp_path) is False
+        is_valid, error_message = manager._validate_extension(tmp_path)
+        assert is_valid is False
+        assert "_extension.ymlが存在しません" in error_message
     
     def test_validate_extension_missing_required_keys(self, tmp_path):
         """必須キーが欠けている場合の検証テスト."""
         ext_dir = tmp_path / "_extensions" / "resepemb" / "kroki"
         ext_dir.mkdir(parents=True)
         
-        # nameキーのみ（authorとversionが欠けている）
-        config = {"name": "kroki"}
+        # titleキーのみ（authorとversionが欠けている）
+        config = {"title": "kroki"}
         with open(ext_dir / "_extension.yml", "w") as f:
             yaml.dump(config, f)
         
         manager = ExtensionManager()
-        assert manager._validate_extension(tmp_path) is False
+        is_valid, error_message = manager._validate_extension(tmp_path)
+        assert is_valid is False
+        assert "必須キーが不足しています" in error_message
     
     def test_validate_extension_invalid_yaml(self, tmp_path):
         """無効なYAMLの場合の検証テスト."""
@@ -177,7 +183,9 @@ class TestExtensionManager:
         (ext_dir / "_extension.yml").write_text("invalid: yaml: content:\n")
         
         manager = ExtensionManager()
-        assert manager._validate_extension(tmp_path) is False
+        is_valid, error_message = manager._validate_extension(tmp_path)
+        assert is_valid is False
+        assert "YAMLパースエラー" in error_message
     
     def test_deploy_extension_full_flow(self, tmp_path):
         """deploy_extensionの完全なフローのテスト（拡張が既に存在する場合）."""
@@ -187,7 +195,7 @@ class TestExtensionManager:
         ext_dir.mkdir(parents=True)
         
         config = {
-            "name": "kroki",
+            "title": "kroki",
             "author": "Test Author",
             "version": "1.0.0",
         }
@@ -216,7 +224,7 @@ class TestExtensionManager:
             ext_dir = source_dir / "resepemb" / "kroki"
             ext_dir.mkdir(parents=True)
             config = {
-                "name": "kroki",
+                "title": "kroki",
                 "author": "Test Author",
                 "version": "1.0.0",
             }
@@ -250,7 +258,14 @@ class TestExtensionManager:
         source_dir = tmp_path / "source" / "_extensions"
         ext_dir = source_dir / "resepemb" / "kroki"
         ext_dir.mkdir(parents=True)
-        # _extension.ymlがない
+        
+        # _extension.ymlを作成するが、titleキーがない（無効）
+        config = {
+            "author": "Test Author",
+            "version": "1.0.0",
+        }
+        with open(ext_dir / "_extension.yml", "w") as f:
+            yaml.dump(config, f)
         
         # ターゲットディレクトリ
         target_dir = tmp_path / "target"

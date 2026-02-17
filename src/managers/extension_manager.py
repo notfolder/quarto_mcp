@@ -89,7 +89,7 @@ class ExtensionManager:
                 except Exception as e:
                     debug_info.append(f"内容取得エラー: {e}")
             
-            expected_yml = target_dir / '_extensions' / 'quarto-kroki' / '_extension.yml'
+            expected_yml = target_dir / '_extensions' / 'fermarsan' / 'quarto-kroki' / '_extension.yml'
             debug_info.append(f"\n期待されるパス: {expected_yml}")
             debug_info.append(f"期待されるパス存在: {expected_yml.exists()}")
             
@@ -108,7 +108,7 @@ class ExtensionManager:
         Returns:
             拡張が存在する場合はTrue、存在しない場合はFalse
         """
-        extension_yml = self.extensions_source / "quarto-kroki" / "_extension.yml"
+        extension_yml = self.extensions_source / "fermarsan" / "quarto-kroki" / "_extension.yml"
         return extension_yml.exists()
     
     def _install_extension(self) -> None:
@@ -116,7 +116,7 @@ class ExtensionManager:
         quarto addコマンドで拡張をインストールする.
         
         親ディレクトリに移動してquarto addコマンドを実行し、
-        _extensions/quarto-krokiに拡張をインストールする。
+        _extensions/fermarsan/quarto-krokiに拡張をインストールする。
         
         Raises:
             RuntimeError: quartoコマンドの実行に失敗した場合
@@ -149,7 +149,7 @@ class ExtensionManager:
                 )
             
             # インストール後、_extension.ymlの存在を確認
-            extension_yml = self.extensions_source / "quarto-kroki" / "_extension.yml"
+            extension_yml = self.extensions_source / "fermarsan" / "quarto-kroki" / "_extension.yml"
             if not extension_yml.exists():
                 # デバッグ情報を収集
                 debug_info = []
@@ -250,7 +250,7 @@ class ExtensionManager:
             (検証結果, エラーメッセージ) のタプル
         """
         extension_yml = (
-            target_dir / "_extensions" / "quarto-kroki" / "_extension.yml"
+            target_dir / "_extensions" / "fermarsan" / "quarto-kroki" / "_extension.yml"
         )
         
         if not extension_yml.exists():

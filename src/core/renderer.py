@@ -15,6 +15,7 @@ from src.models.schemas import RenderResult, OutputInfo, Metadata
 from src.models.formats import FORMAT_DEFINITIONS
 from src.converters.kroki_converter import KrokiConverter
 from src.managers.yaml_frontmatter_manager import YAMLFrontmatterManager
+from src.managers.extension_manager import ExtensionManager
 
 
 class QuartoRenderError(Exception):
@@ -108,6 +109,16 @@ class QuartoRenderer:
         
         # 一時作業ディレクトリを作成
         with self.temp_manager.create_workspace() as temp_dir:
+            # Kroki有効時は拡張を配置
+            if self._is_kroki_enabled():
+                try:
+                    self._deploy_kroki_extension(temp_dir)
+                except Exception as e:
+                    # 拡張配置に失敗した場合は例外を発生
+                    raise QuartoRenderError(
+                        f"Failed to deploy Kroki extension: {e}",
+                        code="EXTENSION_DEPLOY_FAILED"
+                    )
             # テンプレートを解決（URLからダウンロードまたはIDから解決）
             template_path = await self.template_manager.resolve_template(
                 template, format_id, temp_dir
@@ -457,6 +468,26 @@ class QuartoRenderer:
             return False
         
         return True
+    
+    def _deploy_kroki_extension(self, temp_dir: Path) -> None:
+        """
+        Kroki拡張を一時ディレクトリに配置する.
+        
+        Args:
+            temp_dir: 一時作業ディレクトリのパス
+            
+        Raises:
+            RuntimeError: 拡張の配置に失敗した場合
+            FileNotFoundError: 拡張の検証に失敗した場合
+        """
+        # 環境変数から拡張ソースを取得
+        extensions_source = os.environ.get("QUARTO_MCP_EXTENSIONS_SOURCE")
+        
+        # ExtensionManagerを初期化
+        ext_manager = ExtensionManager(extensions_source=extensions_source)
+        
+        # 拡張を配置
+        ext_manager.deploy_extension(temp_dir)
     
     def _apply_kroki_conversion(
         self,

@@ -67,29 +67,85 @@ KrokiサービスのエンドポイントURLを指定する環境変数。
 - デフォルト値: `auto`（出力形式に応じて自動選択）
 - 重要: `svg`または`png`が指定された場合、全ての出力形式でその画像形式を使用
 
+**QUARTO_MCP_EXTENSIONS_SOURCE:**
+- quarto-kroki拡張を含む`_extensions`ディレクトリのパスを指定
+- デフォルト値: `/opt/quarto-project/_extensions`
+- 動作:
+  - 指定されたパスが存在し、その中に`resepemb/kroki/_extension.yml`がある場合、そこから拡張をコピー
+  - 存在しない場合、親ディレクトリで`quarto add resepemb/quarto-kroki`コマンドを実行して拡張を取得
+  - レンダリング時、.qmdファイルと同じディレクトリに`_extensions`ディレクトリ全体をコピー
+- 用途: 拡張のキャッシュ管理、複数拡張の一括管理、オフライン環境での利用
+
 ### 2.2 quarto-kroki拡張の利用
 
-#### 前提条件
+#### 自動配置機能
 
-Kroki機能を使用する前に、quarto-kroki拡張を事前にインストールしておく必要がある。
+quarto-kroki拡張は、resepemb/quarto-krokiの仕様により、.qmdファイルと同じディレクトリに`_extensions/resepemb/kroki`として存在する必要がある。本システムは、レンダリング時に自動的に拡張を配置する機能を提供する。
 
 **使用する拡張:**
 - GitHub リポジトリ: resepemb/quarto-kroki
 - 選定理由: SVG/PNG形式の指定が可能で、カスタムサービスURLの指定に対応している
 
-**環境構築手順（実装前の準備）:**
+**自動配置の動作:**
 
-拡張のインストールは以下のコマンドで実行：
+1. **拡張の取得元確認:**
+   - `QUARTO_MCP_EXTENSIONS_SOURCE`環境変数で指定されたパスを確認
+   - デフォルト: `/opt/quarto-project/_extensions`
+   - 指定されたパスの`resepemb/kroki/_extension.yml`が存在するか確認
+
+2. **拡張が存在する場合:**
+   - `QUARTO_MCP_EXTENSIONS_SOURCE`ディレクトリ全体を一時ディレクトリの`_extensions`にコピー
+   - 既存の拡張をそのまま使用（ネットワークアクセス不要）
+
+3. **拡張が存在しない場合:**
+   - `QUARTO_MCP_EXTENSIONS_SOURCE`の親ディレクトリ（デフォルト: `/opt/quarto-project`）に移動
+   - `quarto add resepemb/quarto-kroki --no-prompt`コマンドを実行
+   - Quartoが`_extensions/resepemb/kroki`として拡張を自動配置
+   - 作成された`_extensions`ディレクトリ全体を一時ディレクトリにコピー
+
+4. **レンダリング時の配置:**
+   - Quarto CLIを実行する前に、一時.qmdファイルと同じディレクトリに`_extensions`ディレクトリをコピー
+   - `_extensions/resepemb/kroki/_extension.yml`の存在を検証
+   - 配置に失敗した場合はエラーを返す
+
+#### 手動での事前準備（オプション）
+
+初回インストールを事前に実行したい場合や、特定のバージョンを使用したい場合は、以下の方法で事前に拡張を配置できる。
+
+**方法1: 推奨方法（Quarto CLIによるインストール）**
 
 ```bash
-quarto add resepemb/quarto-kroki
+# ソースディレクトリを作成
+mkdir -p /opt/quarto-project
+cd /opt/quarto-project
+
+# Quarto CLIで拡張をインストール
+quarto add resepemb/quarto-kroki --no-prompt
+
+# _extensions/resepemb/kroki ディレクトリが作成される
+ls _extensions/resepemb/kroki/_extension.yml  # 確認
 ```
 
-または、プロジェクトの`_extensions`ディレクトリに手動で配置：
+**方法2: 既存プロジェクトからコピー**
 
-1. GitHubのresepemb/quarto-krokiリポジトリからZIPアーカイブをダウンロード
-2. アーカイブを解凍
-3. `_extensions/kroki`ディレクトリに配置
+```bash
+# 既存のQuartoプロジェクトから_extensionsディレクトリをコピー
+mkdir -p /opt/quarto-project
+cp -r /path/to/existing/project/_extensions /opt/quarto-project/
+```
+
+**方法3: カスタムパスの指定**
+
+プロジェクト固有の拡張ディレクトリを使用する場合：
+
+```bash
+# プロジェクトディレクトリに拡張をインストール
+cd /path/to/your/project
+quarto add resepemb/quarto-kroki --no-prompt
+
+# 環境変数で_extensionsディレクトリのパスを指定
+export QUARTO_MCP_EXTENSIONS_SOURCE=/path/to/your/project/_extensions
+```
 
 #### Krokiサービスの起動
 
@@ -146,11 +202,15 @@ export QUARTO_MCP_KROKI_TIMEOUT=3600
 
 # 画像形式を指定（オプション）
 export QUARTO_MCP_KROKI_IMAGE_FORMAT=auto
+
+# 拡張のソースディレクトリを指定（オプション）
+export QUARTO_MCP_EXTENSIONS_SOURCE=~/.quarto_mcp/extensions
 ```
 
-**拡張の適用:**
-- Kroki機能が有効な場合、YAMLフロントマターに拡張を自動的に追加
-- 拡張がインストールされていない場合はエラーを返す
+**拡張の配置と適用:**
+- Kroki機能が有効な場合、レンダリング前に自動的に拡張を配置
+- YAMLフロントマターに拡張を自動的に追加
+- 拡張の取得または配置に失敗した場合はエラーを返す
 
 ### 2.3 Mermaid記法の処理
 
@@ -251,6 +311,14 @@ flowchart TD
     C --> E[QuartoRenderer]
     E --> F[Quarto CLI実行]
     
+    D --> X[ExtensionManager]
+    X --> Y{拡張存在確認}
+    Y -->|存在| Z[_extensionsをコピー]
+    Y -->|不在| AA[quarto add実行]
+    AA --> AB[_extensionsをコピー]
+    AB --> AC[一時ディレクトリに配置]
+    Z --> AC
+    
     D --> G[KrokiConverter]
     G --> H[Mermaid記法検出]
     H --> I[画像形式決定]
@@ -260,7 +328,8 @@ flowchart TD
     N --> O[既存YAML解析]
     O --> P[Kroki設定追加]
     
-    J --> Q[変換後コンテンツ]
+    AC --> Q[拡張配置完了]
+    J --> Q
     P --> Q
     
     Q --> E
@@ -275,6 +344,7 @@ flowchart TD
 sequenceDiagram
     participant User as ユーザー
     participant Tool as quarto_render
+    participant ExtMgr as ExtensionManager
     participant Conv as KrokiConverter
     participant YAML as YAMLManager
     participant Render as QuartoRenderer
@@ -284,6 +354,19 @@ sequenceDiagram
     Tool->>Tool: 環境変数確認
     
     alt Kroki有効
+        Tool->>ExtMgr: 拡張配置要求
+        ExtMgr->>ExtMgr: ソースディレクトリ確認
+        
+        alt 拡張が存在
+            ExtMgr->>ExtMgr: _extensionsをコピー
+        else 拡張が不在
+            ExtMgr->>ExtMgr: quarto addコマンド実行
+            ExtMgr->>ExtMgr: _extensionsをコピー
+        end
+        
+        ExtMgr->>ExtMgr: _extension.yml検証
+        ExtMgr->>Tool: 配置完了
+        
         Tool->>Conv: Mermaid記法変換要求
         Conv->>Conv: 記法検出
         Conv->>Conv: 画像形式決定
@@ -315,7 +398,18 @@ sequenceDiagram
 3. 未設定または不正な場合は標準フローへ分岐
 4. 正常な場合はKrokiフローへ進む
 
-**ステップ2: Mermaid記法の変換**
+**ステップ2: 拡張の配置**
+1. 環境変数`QUARTO_MCP_EXTENSIONS_SOURCE`からソースディレクトリのパスを取得（デフォルト: `/opt/quarto-project/_extensions`）
+2. ソースディレクトリに`resepemb/kroki/_extension.yml`が存在するか確認
+3. 存在する場合はソースディレクトリから`_extensions`全体をコピー
+4. 存在しない場合は以下の処理を実行:
+   - 親ディレクトリ（デフォルト: `/opt/quarto-project`）で`quarto add resepemb/quarto-kroki --no-prompt`を実行
+   - ソースディレクトリに`_extensions/resepemb/kroki`が自動作成される
+5. 一時ディレクトリに`_extensions`ディレクトリ全体を配置
+6. `_extensions/resepemb/kroki/_extension.yml`の存在を検証
+7. 検証に失敗した場合はエラーを返す
+
+**ステップ3: Mermaid記法の変換**
 1. 入力コンテンツを行単位で解析
 2. Quarto拡張記法のパターンをマッチング
 3. 標準Markdown記法のパターンをマッチング
@@ -325,7 +419,7 @@ sequenceDiagram
 7. 画像形式が指定されている場合はハイフンと形式名を付与
 8. 変換後のコンテンツを生成
 
-**ステップ3: YAMLフロントマターの更新**
+**ステップ4: YAMLフロントマターの更新**
 1. 変換後のコンテンツから既存のYAMLヘッダーを抽出
 2. YAMLヘッダーが存在する場合はパース
 3. filtersキーの有無を確認
@@ -335,7 +429,9 @@ sequenceDiagram
 7. serviceUrlサブキーに環境変数の値を設定
 8. マージされたYAMLと本文を結合
 
-**ステップ4: Quarto CLIの実行**
+**ステップ5: Quarto CLIの実行**
+1. 変換後のコンテンツを一時qmdファイルとして保存
+**ステップ5: Quarto CLIの実行**
 1. 変換後のコンテンツを一時qmdファイルとして保存
 2. 一時ディレクトリをカレントディレクトリとして設定
 3. Quarto CLI renderコマンドを構築
@@ -345,7 +441,7 @@ sequenceDiagram
 7. プロセスの終了を待機
 8. 一時ディレクトリ内の出力ファイルを最終出力先にコピー
 
-**ステップ5: クリーンアップ**
+**ステップ6: クリーンアップ**
 1. 一時ディレクトリとそのすべての内容を削除
 2. エラーが発生した場合でもクリーンアップを確実に実行
 
@@ -442,9 +538,84 @@ YAMLフロントマターへのKroki設定の追加と既存YAMLとのマージ�
 既存のrenderメソッドに以下の処理を追加：
 
 1. Kroki有効判定の実行
-2. Kroki有効な場合はKroki変換統合メソッドの呼び出し
+2. Kroki有効な場合は拡張配置とKroki変換統合メソッドの呼び出し
 3. 変換エラー時のフォールバック処理
 4. 警告情報の記録
+
+### 4.4 ExtensionManagerクラス
+
+#### 責務
+
+quarto-kroki拡張の取得、保存、配置を管理する。
+
+#### 初期化処理
+
+パラメータとして以下を受け取る：
+- 拡張ソースディレクトリのパス（オプション、デフォルト: `/opt/quarto-project/_extensions`）
+
+初期化時に以下を実行：
+- ソースディレクトリのパスを正規化（チルダ展開）
+- ソースディレクトリが存在しない場合は作成
+
+#### 主要メソッド
+
+**拡張配置メソッド:**
+- 入力: 配置先ディレクトリパス（一時ディレクトリ）
+- 出力: なし（エラー時に例外を発生）
+- 処理: 
+  1. `QUARTO_MCP_EXTENSIONS_SOURCE`の`resepemb/kroki/_extension.yml`が存在するか確認
+  2. 存在する場合は`QUARTO_MCP_EXTENSIONS_SOURCE`ディレクトリ全体をコピー処理へ
+  3. 存在しない場合はQuarto addコマンドを実行後、作成された`_extensions`をコピー処理へ
+  4. 配置先の`_extensions/resepemb/kroki/_extension.yml`を検証
+
+**拡張存在確認メソッド:**
+- 入力: なし
+- 出力: 拡張が存在するかの真偽値
+- 処理: `QUARTO_MCP_EXTENSIONS_SOURCE`の`resepemb/kroki/_extension.yml`の存在確認
+
+**拡張インストールメソッド:**
+- 入力: なし
+- 出力: なし（エラー時に例外を発生）
+- 処理: 
+  1. `QUARTO_MCP_EXTENSIONS_SOURCE`の親ディレクトリ（デフォルト: `/opt/quarto-project`）に移動
+  2. `quarto add resepemb/quarto-kroki --no-prompt`コマンドを実行
+  3. コマンドの標準出力・標準エラーをキャプチャ
+  4. 終了コードが0でない場合は例外を発生
+  5. `_extensions/resepemb/kroki/_extension.yml`の存在を確認
+
+**拡張コピーメソッド:**
+- 入力: 配置先ディレクトリパス
+- 出力: なし（エラー時に例外を発生）
+- 処理: 
+  1. `QUARTO_MCP_EXTENSIONS_SOURCE`ディレクトリ全体を配置先の`_extensions`にコピー
+  2. シンボリックリンクは実体ファイルとしてコピー
+  3. 既存の`_extensions`ディレクトリがある場合は上書き
+
+**拡張検証メソッド:**
+- 入力: 配置先ディレクトリパス
+- 出力: 検証結果の真偽値
+- 処理: 
+  1. `_extensions/resepemb/kroki/_extension.yml`の存在確認
+  2. YAMLファイルのパース
+  3. 必須キー（name、author、version）の存在確認
+
+#### エラーハンドリング
+
+**Quartoコマンド実行失敗:**
+- Quarto CLIが見つからない場合
+- ネットワークエラー、拡張が見つからないなどのエラーを捕捉
+- 標準エラー出力をエラーメッセージに含める
+- 例外を発生させてレンダリングを中止
+
+**コピー失敗:**
+- ファイルシステムエラーを捕捉
+- パーミッションエラーの場合は詳細を記録
+- 例外を発生させてレンダリングを中止
+
+**検証失敗:**
+- `_extension.yml`が不正な場合
+- エラーメッセージに詳細を含める
+- 例外を発生させてレンダリングを中止
 
 ## 5. エラーハンドリング
 
@@ -453,7 +624,9 @@ YAMLフロントマターへのKroki設定の追加と既存YAMLとのマージ�
 | エラーケース | 検出方法 | 対処 | エラーコード |
 |------------|---------|------|------------|
 | Kroki URLが不正 | URL検証 | 警告ログ出力、標準フローへフォールバック | KROKI_INVALID_URL |
-
+| 拡張が存在せずquarto add失敗 | Quarto CLIエラー、ネットワークエラー | エラー詳細をユーザーへ返す、レンダリング中止 | EXTENSION_INSTALL_FAILED |
+| 拡張のコピー失敗 | ファイルシステムエラー | エラー詳細をユーザーへ返す、レンダリング中止 | EXTENSION_COPY_FAILED |
+| 拡張の検証失敗 | _extension.yml不在または不正 | エラー詳細をユーザーへ返す、レンダリング中止 | EXTENSION_INVALID |
 | Kroki API接続失敗 | Quartoエラー出力解析 | エラー詳細をユーザーへ返す | KROKI_API_CONNECTION_FAILED |
 | タイムアウト | タイムアウト検知 | タイムアウトエラーをユーザーへ返す | KROKI_TIMEOUT |
 
@@ -486,8 +659,9 @@ YAMLフロントマターへのKroki設定の追加と既存YAMLとのマージ�
 | 環境変数名 | デフォルト値 | 例 |
 |-----------|------------|-----|
 | QUARTO_MCP_KROKI_URL | 未設定 | https://kroki.io |
-| QUARTO_MCP_KROKI_TIMEOUT | 30 | 60 |
+| QUARTO_MCP_KROKI_TIMEOUT | 3600 | 60 |
 | QUARTO_MCP_KROKI_IMAGE_FORMAT | auto | svg、png |
+| QUARTO_MCP_EXTENSIONS_SOURCE | ~/.quarto_mcp/extensions | /path/to/extensions |
 
 詳細は「2.1 環境変数による制御」を参照。
 
@@ -505,22 +679,44 @@ quarto-kroki拡張自体が持つ設定項目：
 
 ```mermaid
 flowchart LR
-    A[元のMermaidコンテンツ] --> B[記法検出]
-    B --> C[画像形式決定]
-    C --> D[Kroki記法へ変換]
-    D --> E[変換後コンテンツ]
+    A[元のMermaidコンテンツ] --> B[拡張配置]
+    B --> C[記法検出]
+    C --> D[画像形式決定]
+    D --> E[Kroki記法へ変換]
+    E --> F[変換後コンテンツ]
     
-    E --> F[YAML設定追加]
-    F --> G[最終コンテンツ]
+    F --> G[YAML設定追加]
+    G --> H[最終コンテンツ]
     
-    G --> H[Quarto CLI実行]
+    H --> I[Quarto CLI実行]
     
-    H --> I[Kroki API呼び出し]
-    I --> J[画像生成]
-    J --> K[出力ファイル]
+    I --> J[Kroki API呼び出し]
+    J --> K[画像生成]
+    K --> L[出力ファイル]
 ```
 
-### 7.2 エラーハンドリングフロー
+### 7.2 拡張管理フロー
+
+```mermaid
+flowchart TD
+    A[拡張配置要求] --> B{ソースに拡張存在?}
+    B -->|Yes| C[ソースの_extensionsを<br/>一時ディレクトリにコピー]
+    B -->|No| D[quarto addコマンド実行]
+    
+    D --> E[ソースディレクトリに<br/>_extensionsが自動作成]
+    E --> C
+    
+    C --> G[一時ディレクトリに<br/>_extensionsディレクトリ配置完了]
+    G --> H{_extension.yml検証}
+    
+    H -->|OK| I[配置完了]
+    H -->|NG| J[エラー: EXTENSION_INVALID]
+    
+    D -->|失敗| K[エラー: EXTENSION_INSTALL_FAILED]
+    C -->|失敗| L[エラー: EXTENSION_COPY_FAILED]
+```
+
+### 7.3 エラーハンドリングフロー
 
 ```mermaid
 flowchart TD
@@ -552,7 +748,8 @@ flowchart TD
 | 制約項目 | 内容 |
 |---------|------|
 | Kroki APIへの依存 | Krokiサービスが利用不可の場合、レンダリングが失敗。公開サービス使用時はインターネット接続が必要 |
-| quarto-kroki拡張の前提 | レンダリング前にquarto-kroki拡張がインストール済みである必要がある |
+| 拡張の初回ダウンロード | 拡張が未取得の場合、初回レンダリング時にGitHubからのダウンロードが必要。オフライン環境では事前に拡張を手動配置 |
+| ファイルシステムの書き込み権限 | 拡張のダウンロードとコピーには、`QUARTO_MCP_EXTENSIONS_SOURCE`と一時ディレクトリへの書き込み権限が必要 |
 | コンテンツの外部送信 | Kroki API使用時、ダイアグラムのコンテンツがKrokiサーバーへ送信される |
 
 ### 9.2 互換性
@@ -573,6 +770,7 @@ flowchart TD
 |--------------|-----------|
 | KrokiConverter | Quarto拡張記法の検出と変換、標準Markdown記法の検出と変換、セルオプションの保持、画像形式の自動選択 |
 | YAMLFrontmatterManager | YAMLの抽出、YAMLのマージ、YAMLの再構築、既存YAMLとの統合 |
+| ExtensionManager | 拡張の存在確認、GitHubからのダウンロード、ソースへの保存、一時ディレクトリへのコピー、_extension.ymlの検証 |
 
 ### 10.2 統合テスト項目
 
@@ -583,6 +781,12 @@ flowchart TD
 
 **Kroki無効時:**
 - 環境変数未設定時に標準フローで処理されること
+
+**拡張管理:**
+- 拡張が存在しない場合の初回ダウンロード
+- 拡張が存在する場合の再利用
+- ダウンロード失敗時のエラーハンドリング
+- 不正な拡張の検証失敗
 
 **フォールバック:**
 - 不正なKroki URL、API接続失敗、タイムアウト時のフォールバック動作
@@ -599,6 +803,6 @@ flowchart TD
 | 効果カテゴリ | 具体的な効果 |
 |------------|------------|
 | パフォーマンス | 複数のMermaidダイアグラムを含むコンテンツで、レンダリング時間を50%以上短縮。Chromium起動のオーバーヘッドを排除 |
-| ユーザー体験 | 環境変数の設定のみで透明に高速化が有効。既存のMermaid記法をそのまま使用可能 |
+| ユーザー体験 | 環境変数の設定のみで透明に高速化が有効。既存のMermaid記法をそのまま使用可能。拡張の手動インストール不要 |
 | 柔軟性 | 公開Krokiサービスまたはセルフホスティングの選択が可能。画像形式の自動選択または手動指定が可能 |
-| 運用 | セルフホスティングによりオフライン環境でも使用可能。Chromiumのインストールが不要な環境でも動作 |
+| 運用 | 拡張の自動管理により初期設定が簡単。セルフホスティングによりオフライン環境でも使用可能（事前に拡張を配置） |

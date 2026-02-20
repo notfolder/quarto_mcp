@@ -1,6 +1,7 @@
 """Quarto CLI実行とレンダリング処理."""
 
 import asyncio
+import logging
 import os
 import re
 import shutil
@@ -351,7 +352,14 @@ class QuartoRenderer:
         Raises:
             QuartoRenderError: 実行エラーまたはタイムアウト
         """
+        logger = logging.getLogger(__name__)
+        
         try:
+            # コマンド実行をログに記録
+            logger.info(f"Executing Quarto command: {' '.join(command)}")
+            if cwd:
+                logger.debug(f"Working directory: {cwd}")
+            
             process = await asyncio.create_subprocess_exec(
                 *command,
                 stdout=asyncio.subprocess.PIPE,
@@ -368,14 +376,24 @@ class QuartoRenderer:
             stdout_str = stdout.decode('utf-8', errors='replace')
             stderr_str = stderr.decode('utf-8', errors='replace')
             
+            # 標準出力をログに記録
+            if stdout_str.strip():
+                logger.info(f"Quarto stdout:\n{stdout_str}")
+            
+            # 標準エラー出力をログに記録
+            if stderr_str.strip():
+                logger.info(f"Quarto stderr:\n{stderr_str}")
+            
             # 非ゼロ終了コードの場合はエラー
             if process.returncode != 0:
+                logger.error(f"Quarto CLI exited with code {process.returncode}")
                 raise QuartoRenderError(
                     f"Quarto CLI exited with code {process.returncode}",
                     stderr=stderr_str,
                     code="RENDER_FAILED"
                 )
             
+            logger.info(f"Quarto CLI completed successfully (returncode: {process.returncode})")
             return stdout_str, stderr_str
             
         except asyncio.TimeoutError as e:

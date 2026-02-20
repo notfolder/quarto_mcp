@@ -118,3 +118,89 @@ just a string
         assert "pptx" in result
         assert result["pptx"]["slide-level"] == 2
         assert result["pptx"]["reference-doc"] == "/path/to/template.pptx"
+
+
+class TestQuartoRendererMermaidConversion:
+    """QuartoRendererのMermaid変換処理テストクラス."""
+    
+    def test_apply_mermaid_conversion_standard_syntax(self):
+        """標準Markdown記法（```mermaid）がQuarto拡張記法（```{mermaid}）に変換されること."""
+        renderer = QuartoRenderer()
+        
+        content = """# タイトル
+
+```mermaid
+graph TD
+    A --> B
+```
+
+本文
+"""
+        
+        result = renderer._apply_mermaid_conversion(content)
+        
+        # ```mermaid → ```{mermaid} に変換される
+        assert "```{mermaid}" in result
+        assert "```mermaid" not in result
+    
+    def test_apply_mermaid_conversion_preserve_quarto_syntax(self):
+        """Quarto拡張記法（```{mermaid}）はそのまま保持されること."""
+        renderer = QuartoRenderer()
+        
+        content = """# タイトル
+
+```{mermaid}
+graph TD
+    A --> B
+```
+
+本文
+"""
+        
+        result = renderer._apply_mermaid_conversion(content)
+        
+        # そのまま保持される
+        assert result == content
+    
+    def test_apply_mermaid_conversion_multiple_blocks(self):
+        """複数のMermaidブロックが変換されること."""
+        renderer = QuartoRenderer()
+        
+        content = """# タイトル
+
+```mermaid
+graph TD
+    A --> B
+```
+
+本文
+
+```mermaid
+sequenceDiagram
+    Alice->>Bob: Hello
+```
+"""
+        
+        result = renderer._apply_mermaid_conversion(content)
+        
+        # すべての```mermaid → ```{mermaid} に変換される
+        assert result.count("```{mermaid}") == 2
+        assert "```mermaid" not in result
+    
+    def test_apply_mermaid_conversion_no_mermaid_blocks(self):
+        """Mermaidブロックがない場合もエラーなく処理できること."""
+        renderer = QuartoRenderer()
+        
+        content = """# タイトル
+
+```python
+print("Hello")
+```
+
+本文
+"""
+        
+        result = renderer._apply_mermaid_conversion(content)
+        
+        # 変更なし
+        assert result == content

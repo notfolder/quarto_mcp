@@ -106,6 +106,15 @@ class QuartoRenderer:
                 import logging
                 logger = logging.getLogger(__name__)
                 logger.warning(f"Kroki conversion failed, falling back to standard flow: {e}")
+        else:
+            # Krokiが無効な場合は標準Mermaid記法をQuarto拡張記法に変換
+            try:
+                content = self._apply_mermaid_conversion(content)
+            except Exception as e:
+                # Mermaid変換でエラーが発生した場合はフォールバック
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Mermaid conversion failed, falling back to standard flow: {e}")
         
         # 一時作業ディレクトリを作成
         with self.temp_manager.create_workspace() as temp_dir:
@@ -527,5 +536,28 @@ class QuartoRenderer:
         # 2. YAMLフロントマターにKroki設定を追加
         yaml_manager = YAMLFrontmatterManager(kroki_service_url=kroki_url)
         content = yaml_manager.add_kroki_config(content)
+        
+        return content
+    
+    def _apply_mermaid_conversion(self, content: str) -> str:
+        """
+        標準Mermaid記法をQuarto拡張記法に変換する.
+        
+        処理内容:
+        - 標準Markdown記法（```mermaid）をQuarto拡張記法（```{mermaid}）に変換
+        
+        Args:
+            content: 元のQuarto Markdownコンテンツ
+            
+        Returns:
+            Quarto拡張記法に変換されたコンテンツ
+            
+        Raises:
+            Exception: 変換処理でエラーが発生した場合
+        """
+        # 標準Markdown記法（```mermaid）をQuarto拡張記法（```{mermaid}）に変換
+        # 既に```{mermaid}形式のものはそのまま保持される
+        pattern = re.compile(r'^```mermaid', re.MULTILINE)
+        content = pattern.sub('```{mermaid}', content)
         
         return content

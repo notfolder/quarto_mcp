@@ -1,7 +1,11 @@
 """Quarto MCP Server - メインサーバー実装."""
 
 import asyncio
+import logging
+import os
+import sys
 from pathlib import Path
+from logging.handlers import RotatingFileHandler
 
 import yaml
 from mcp.server import Server
@@ -9,6 +13,41 @@ from mcp.types import Tool, TextContent
 import mcp.server.stdio
 
 from src.tools import render, formats  # , validate_mermaid
+
+# ログ設定: INFO以上のログを標準エラー出力とファイルに出力
+# 注: stdoutはJSON-RPC通信に使用されるため、ログはstderrに出力する
+
+# ログディレクトリを環境変数から取得（デフォルト: ./logs）
+log_dir = os.environ.get('QUARTO_MCP_LOG_DIR', 'logs')
+log_path = Path(log_dir)
+log_path.mkdir(parents=True, exist_ok=True)
+
+# ログファイルパス（ローテーション: 10MB、バックアップ3世代）
+log_file = log_path / 'quarto_mcp_server.log'
+
+# ログフォーマット
+log_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+# ハンドラー設定
+handlers = [
+    logging.StreamHandler(sys.stderr),  # 標準エラー出力
+    RotatingFileHandler(
+        log_file,
+        maxBytes=10 * 1024 * 1024,  # 10MB
+        backupCount=3,
+        encoding='utf-8'
+    )
+]
+
+# 全ハンドラーにフォーマッターを適用
+for handler in handlers:
+    handler.setFormatter(log_formatter)
+
+# ロガー設定
+logging.basicConfig(
+    level=logging.INFO,
+    handlers=handlers
+)
 
 
 # サーバーインスタンス

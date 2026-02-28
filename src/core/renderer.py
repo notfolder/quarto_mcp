@@ -507,14 +507,20 @@ class QuartoRenderer:
             RuntimeError: 拡張の配置に失敗した場合
             FileNotFoundError: 拡張の検証に失敗した場合
         """
+        import logging
+        logger = logging.getLogger(__name__)
+        
         # 環境変数から拡張ソースを取得
         extensions_source = os.environ.get("QUARTO_MCP_EXTENSIONS_SOURCE")
+        logger.info(f"[KROKI_EXTENSION] Deploying Kroki extension from: {extensions_source}")
+        logger.info(f"[KROKI_EXTENSION] Target directory: {temp_dir}")
         
         # ExtensionManagerを初期化
         ext_manager = ExtensionManager(extensions_source=extensions_source)
         
         # 拡張を配置
         ext_manager.deploy_extension(temp_dir)
+        logger.info(f"[KROKI_EXTENSION] Extension deployed successfully")
     
     def _apply_kroki_conversion(
         self,
@@ -540,6 +546,9 @@ class QuartoRenderer:
         Raises:
             Exception: 変換処理でエラーが発生した場合
         """
+        import logging
+        logger = logging.getLogger(__name__)
+        
         # 環境変数からKroki URLを取得
         kroki_url = os.environ.get("QUARTO_MCP_KROKI_URL", "").strip()
         
@@ -547,13 +556,44 @@ class QuartoRenderer:
         image_format_env = os.environ.get("QUARTO_MCP_KROKI_IMAGE_FORMAT", "").lower()
         image_format = image_format_env if image_format_env in ("svg", "png") else None
         
+        logger.info(f"[KROKI_CONVERSION] Starting Kroki conversion for format={format_id}")
+        logger.info(f"[KROKI_CONVERSION] Kroki URL: {kroki_url}")
+        logger.info(f"[KROKI_CONVERSION] Image format: {image_format}")
+        logger.info(f"[KROKI_CONVERSION] Original content length: {len(content)} chars")
+        
+        # Mermaidブロック数をカウント
+        mermaid_count = content.count('```{mermaid') + content.count('```mermaid')
+        logger.info(f"[KROKI_CONVERSION] Found {mermaid_count} mermaid blocks in content")
+        
         # 1. Mermaid記法をKroki記法に変換
         converter = KrokiConverter(format_id=format_id, image_format=image_format)
+        content_before = content
         content = converter.convert(content)
+        
+        # 変換結果を確認
+        kroki_count = content.count('```kroki-mermaid')
+        logger.info(f"[KROKI_CONVERSION] After conversion: {kroki_count} kroki-mermaid blocks")
+        if content_before != content:
+            logger.info(f"[KROKI_CONVERSION] Content was modified by KrokiConverter")
+        else:
+            logger.warning(f"[KROKI_CONVERSION] Content was NOT modified by KrokiConverter")
         
         # 2. YAMLフロントマターにKroki設定を追加
         yaml_manager = YAMLFrontmatterManager(kroki_service_url=kroki_url)
+        content_before_yaml = content
         content = yaml_manager.add_kroki_config(content)
+        
+        if content_before_yaml != content:
+            logger.info(f"[KROKI_CONVERSION] YAML frontmatter was modified")
+            # YAMLヘッダーの開始部分を抽出してログ出力
+            yaml_end_pos = content.find('---\n', 4)  # 2つ目の---を探す
+            if yaml_end_pos > 0:
+                yaml_header = content[4:yaml_end_pos]  # 最初の---以降、2つ目の---まで
+                logger.info(f"[KROKI_CONVERSION] YAML Header:\n{yaml_header}")
+        else:
+            logger.warning(f"[KROKI_CONVERSION] YAML frontmatter was NOT modified")
+        
+        logger.info(f"[KROKI_CONVERSION] Conversion completed, final content length: {len(content)} chars")
         
         return content
     

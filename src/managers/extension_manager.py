@@ -56,16 +56,28 @@ class ExtensionManager:
             RuntimeError: 拡張のインストールまたはコピーに失敗した場合
             FileNotFoundError: 拡張の検証に失敗した場合
         """
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        logger.info(f"[EXTENSION_MANAGER] Checking extension existence at: {self.extensions_source}")
+        
         # 拡張が存在するか確認
-        if not self._check_extension_exists():
+        exists = self._check_extension_exists()
+        logger.info(f"[EXTENSION_MANAGER] Extension exists: {exists}")
+        
+        if not exists:
             # 存在しない場合はインストール
+            logger.info(f"[EXTENSION_MANAGER] Installing extension...")
             self._install_extension()
         
         # _extensionsディレクトリをコピー
+        logger.info(f"[EXTENSION_MANAGER] Copying extension to: {target_dir}")
         self._copy_extension(target_dir)
         
         # 検証
+        logger.info(f"[EXTENSION_MANAGER] Validating extension...")
         is_valid, error_message = self._validate_extension(target_dir)
+        logger.info(f"[EXTENSION_MANAGER] Validation result: {is_valid}")
         if not is_valid:
             # デバッグ情報を収集
             debug_info = []

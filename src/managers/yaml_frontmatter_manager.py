@@ -143,3 +143,59 @@ class YAMLFrontmatterManager:
         
         # YAMLヘッダーとして構築
         return f"---\n{yaml_str}---\n\n{body}"
+    
+    def add_mermaid_config(self, content: str, format_id: str) -> str:
+        """
+        コンテンツのYAMLフロントマターにMermaid設定を追加する.
+        
+        処理内容:
+        1. 既存のYAMLヘッダーを抽出
+        2. format.<format_id>.mermaid-format を 'png' に設定
+        
+        Args:
+            content: 元のQuarto Markdownコンテンツ
+            format_id: 出力形式ID（pptx, docx等）
+            
+        Returns:
+            Mermaid設定が追加されたコンテンツ
+        """
+        # YAMLヘッダーを抽出
+        yaml_dict, body = self._extract_yaml_header(content)
+        
+        # Mermaid設定をマージ
+        merged_yaml = self._merge_mermaid_config(yaml_dict, format_id)
+        
+        # YAMLと本文を再構築
+        return self._reconstruct_content(merged_yaml, body)
+    
+    def _merge_mermaid_config(self, yaml_dict: Optional[dict[str, Any]], format_id: str) -> dict[str, Any]:
+        """
+        既存のYAML辞書にMermaid設定をマージする.
+        
+        Args:
+            yaml_dict: 既存のYAML辞書
+            format_id: 出力形式ID
+            
+        Returns:
+            Mermaid設定がマージされたYAML辞書
+        """
+        # 辞書でない場合は空辞書を使用
+        if not isinstance(yaml_dict, dict):
+            yaml_dict = {}
+        
+        # formatキーの処理
+        if "format" not in yaml_dict:
+            yaml_dict["format"] = {}
+        elif not isinstance(yaml_dict["format"], dict):
+            yaml_dict["format"] = {}
+        
+        # format.<format_id>キーの処理
+        if format_id not in yaml_dict["format"]:
+            yaml_dict["format"][format_id] = {}
+        elif not isinstance(yaml_dict["format"][format_id], dict):
+            yaml_dict["format"][format_id] = {}
+        
+        # mermaid-formatを設定（常に'png'に上書き）
+        yaml_dict["format"][format_id]["mermaid-format"] = "png"
+        
+        return yaml_dict

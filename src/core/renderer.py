@@ -110,7 +110,7 @@ class QuartoRenderer:
         else:
             # Krokiが無効な場合は標準Mermaid記法をQuarto拡張記法に変換
             try:
-                content = self._apply_mermaid_conversion(content)
+                content = self._apply_mermaid_conversion(content, format_id)
             except Exception as e:
                 # Mermaid変換でエラーが発生した場合はフォールバック
                 import logging
@@ -597,25 +597,36 @@ class QuartoRenderer:
         
         return content
     
-    def _apply_mermaid_conversion(self, content: str) -> str:
+    def _apply_mermaid_conversion(self, content: str, format_id: str = "pptx") -> str:
         """
-        標準Mermaid記法をQuarto拡張記法に変換する.
+        標準Mermaid記法をQuarto拡張記法に変換し、Mermaid設定を追加する.
         
         処理内容:
-        - 標準Markdown記法（```mermaid）をQuarto拡張記法（```{mermaid}）に変換
+        1. 標準Markdown記法（```mermaid）をQuarto拡張記法（```{mermaid}）に変換
+        2. YAMLフロントマターにMermaid設定（mermaid-format: png）を追加
         
         Args:
             content: 元のQuarto Markdownコンテンツ
+            format_id: 出力形式ID（デフォルト: pptx）
             
         Returns:
-            Quarto拡張記法に変換されたコンテンツ
+            Quarto拡張記法に変換され、Mermaid設定が追加されたコンテンツ
             
         Raises:
             Exception: 変換処理でエラーが発生した場合
         """
-        # 標準Markdown記法（```mermaid）をQuarto拡張記法（```{mermaid}）に変換
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        # 1. 標準Markdown記法（```mermaid）をQuarto拡張記法（```{mermaid}）に変換
         # 既に```{mermaid}形式のものはそのまま保持される
         pattern = re.compile(r'^```mermaid', re.MULTILINE)
         content = pattern.sub('```{mermaid}', content)
+        
+        # 2. YAMLフロントマターにMermaid設定を追加
+        yaml_manager = YAMLFrontmatterManager(kroki_service_url="")  # kroki_service_urlは未使用
+        content = yaml_manager.add_mermaid_config(content, format_id)
+        
+        logger.info(f"[MERMAID_CONVERSION] Standard Mermaid conversion completed for format={format_id}")
         
         return content
